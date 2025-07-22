@@ -46,12 +46,17 @@
             border-radius: 4px;
             cursor: pointer;
             margin-bottom: 15px;
+            transition: background-color 0.2s;
         }
         #search-button:hover { background-color: #0056b3; }
+        #search-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
         #results-content .result-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
         #results-content .result-item:last-child { border-bottom: none; }
         h4 { margin-top: 0; }
-        #loader { display: none; text-align: center; padding: 10px; }
+        #status { text-align: center; padding: 10px; color: #555; font-style: italic; }
     </style>
 </head>
 <body>
@@ -60,14 +65,14 @@
     
     <div id="panel">
         <h4>Cerca Emergenza</h4>
-        <input type="text" id="search-box" placeholder="Indirizzo o Lat,Lon">
-        <button id="search-button" onclick="searchLocation()">Cerca</button>
+        <input type="text" id="search-box" placeholder="Caricamento dati..." disabled>
+        <button id="search-button" onclick="searchLocation()" disabled>Cerca</button>
         
         <hr>
 
         <h4>Squadre Più Vicine</h4>
-        <div id="loader">Ricerca in corso...</div>
-        <div id="results-content"><p style="font-size: 14px;">I risultati appariranno qui.</p></div>
+        <div id="status"><p>Caricamento dati organizzazioni...</p></div>
+        <div id="results-content"></div>
     </div>
 
     <script>
@@ -79,6 +84,7 @@
         const organizations = [];
         let emergencyMarker;
 
+        // Funzione per aggiornare il pannello dei risultati
         function updateResults(sortedOrgs) {
             const contentDiv = document.getElementById('results-content');
             contentDiv.innerHTML = '';
@@ -98,10 +104,9 @@
             });
         }
 
+        // Funzione per processare la ricerca o il click
         function processEmergency(latlng) {
-            if (emergencyMarker) {
-                map.removeLayer(emergencyMarker);
-            }
+            if (emergencyMarker) { map.removeLayer(emergencyMarker); }
 
             emergencyMarker = L.marker(latlng, { 
                 icon: L.icon({ 
@@ -112,56 +117,50 @@
             }).addTo(map).bindPopup("<b>EMERGENZA</b>").openPopup();
             
             map.panTo(latlng);
-
-            if (organizations.length === 0) {
-                document.getElementById('results-content').innerHTML = '<p style="font-size: 14px;">Dati delle organizzazioni non ancora caricati. Riprova tra poco.</p>';
-                return;
-            }
             
             organizations.forEach(org => {
                 org.distance = latlng.distanceTo(org.latlng);
             });
 
             const sortedOrgs = organizations.sort((a, b) => a.distance - b.distance);
+            
+            document.getElementById('status').style.display = 'none';
             updateResults(sortedOrgs);
         }
 
+        // Funzione di ricerca
         async function searchLocation() {
             const query = document.getElementById('search-box').value;
             if (!query) return;
 
-            document.getElementById('loader').style.display = 'block';
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('status').innerHTML = '<p>Ricerca in corso...</p>';
             document.getElementById('results-content').innerHTML = '';
 
-            // Tenta di interpretare come coordinate
             const coordRegex = /^[-\d.\s]+,[-\d.\s]+$/;
             if (coordRegex.test(query)) {
                 const parts = query.split(',');
                 const lat = parseFloat(parts[0]);
                 const lon = parseFloat(parts[1]);
                 if (!isNaN(lat) && !isNaN(lon)) {
-                    document.getElementById('loader').style.display = 'none';
                     processEmergency(L.latLng(lat, lon));
                     return;
                 }
             }
 
-            // Altrimenti, cerca come indirizzo usando Nominatim (il motore di OpenStreetMap)
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=it`);
             const data = await response.json();
 
-            document.getElementById('loader').style.display = 'none';
             if (data && data.length > 0) {
-                const bestResult = data[0];
-                const latlng = L.latLng(bestResult.lat, bestResult.lon);
-                processEmergency(latlng);
+                processEmergency(L.latLng(data[0].lat, data[0].lon));
             } else {
                 alert('Indirizzo non trovato.');
+                document.getElementById('status').style.display = 'none';
             }
         }
 
         // Caricamento dati
-        omnivore.kml('mappa.kml').addTo(map);
+        omnivore.kml('mappa.kml').on('error', () => console.log('Errore o file KML non trovato.')).addTo(map);
         omnivore.csv('dati.csv')
             .on('ready', function() {
                 this.eachLayer(function(layer) {
@@ -177,15 +176,25 @@
                     const popupContent = `<b>${orgData.name}</b><br>Tipo: ${orgData.type}`;
                     layer.bindPopup(popupContent);
                 });
+                
+                // **** LOGICA DI ABILITAZIONE ****
+                // Una volta che i dati sono pronti, abilita l'interfaccia
                 console.log(`${organizations.length} organizzazioni caricate.`);
+                document.getElementById('search-box').disabled = false;
+                document.getElementById('search-button').disabled = false;
+                document.getElementById('search-box').placeholder = "Indirizzo o Lat,Lon";
+                document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto. Clicca sulla mappa o usa la ricerca.</p>';
+
+                // Abilita il click sulla mappa solo ora
+                map.on('click', function(e) {
+                    processEmergency(e.latlng);
+                });
+            })
+            .on('error', function() {
+                document.getElementById('status').innerHTML = '<p style="color:red;">Errore caricamento dati CSV. Controlla il file e la console.</p>';
             })
             .addTo(map);
-
-        map.on('click', function(e) {
-            processEmergency(e.latlng);
-        });
         
-        // Permette di usare il tasto Invio per la ricerca
         document.getElementById('search-box').addEventListener('keyup', function(event) {
             if (event.key === 'Enter') {
                 searchLocation();
