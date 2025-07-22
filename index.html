@@ -3,106 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portale Mappa Emergenze</title>
+    <title>Mappa delle Organizzazioni</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-omnivore/0.3.4/leaflet-omnivore.min.js"></script>
+    
     <style>
-        /* Stile base per la pagina */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
-        #container {
-            display: flex;
-            height: 100%;
-        }
-        /* Stile per la mappa */
-        #map {
-            height: 100%;
-            width: 75%;
-            background-color: #f0f0f0;
-        }
-        /* Stile per il pannello di controllo */
-        #panel {
-            width: 25%;
-            height: 100%;
+        html, body { height: 100%; width: 100%; margin: 0; padding: 0; }
+        #map { height: 100%; width: 100%; }
+        #results-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            width: 300px;
+            max-height: 80%;
             overflow-y: auto;
-            padding: 20px;
-            box-sizing: border-box;
-            background-color: #fff;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
         }
-        h2 {
-            margin-top: 0;
-            color: #333;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #d9534f;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #c9302c;
-        }
-        #results {
-            margin-top: 20px;
-        }
-        .result-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .result-item h4 {
-            margin: 0 0 5px 0;
-            color: #0056b3;
-        }
-        .result-item p {
-            margin: 0;
-            font-size: 14px;
-            color: #555;
-        }
-        #loader {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
+        .result-item { padding: 5px 0; border-bottom: 1px solid #eee; }
+        .result-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
 
-    <div id="container">
-        <div id="panel">
-            <h2>Ricerca Emergenza</h2>
-            <p>Inserisci l'indirizzo dell'incendio:</p>
-            <input type="text" id="addressInput" placeholder="Es: Via Appia, Muro Lucano">
-            <button onclick="findNearest()">Trova Squadre Vicine</button>
-            <div id="loader">Caricamento...</div>
-            <hr>
-            <div id="results">
-                <p>I risultati della ricerca appariranno qui.</p>
-            </div>
-        </div>
-
-        <div id="map"></div>
+    <div id="map"></div>
+    <div id="results-panel">
+        <h4>Squadre Più Vicine</h4>
+        <div id="results-content"><p>Clicca sulla mappa per segnalare un'emergenza e calcolare le distanze.</p></div>
     </div>
 
     <script>
-        // =================================================================
-        // CONFIGURAZIONE
-        // =================================================================
-        // 1. Incolla qui la tua Chiave API
-        const API_KEY = AIzaSyDC9kFxG3mas903mTEbFkwdUUnwyo7CEOo;
+        const map = L.map('map').setView([40.5, 15.8], 9);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
 
-        // 2. Incolla qui l'ID del
+        const organizations = [];
+        let emergencyMarker;
+
+        // Funzione per aggiornare il pannello dei risultati
+        function updateResults(sortedOrgs) {
+            const contentDiv = document.getElementById('results-content');
+            contentDiv.innerHTML = ''; // Pulisce i risultati precedenti
+            
+            sortedOrgs.slice(0, 5).forEach(org => { // Mostra solo i primi 5
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.innerHTML = `<b>${org.name}</b><br>${(org.distance / 1000).toFixed(2)} km in linea d'aria`;
+                contentDiv.appendChild(item);
+            });
+        }
+
+        // Carica i dati dal CSV
+        omnivore.csv('dati.csv')
+            .on('ready', function() {
+                this.eachLayer(function(layer) {
+                    const props = layer.feature.properties;
+                    const orgData = {
+                        name: props.organizzazione || 'Senza nome',
+                        latlng: layer.getLatLng(),
+                        layer: layer // Riferimento al marker
+                    };
+                    organizations.push(orgData);
+                    layer.bindPopup(`<b>${orgData.name}</b>`);
+                });
+            })
+            .addTo(map);
+
+        // Aggiungi listener per il click sulla mappa
+        map.on('click', function(e) {
+            const emergencyLatLng = e.latlng;
+
+            // Rimuovi il vecchio marker di emergenza se esiste
+            if (emergencyMarker) {
+                map.removeLayer(emergencyMarker);
+            }
+
+            // Aggiungi un nuovo marker per l'emergenza
+            emergencyMarker = L.marker(emergencyLatLng, { 
+                icon: L.icon({ 
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                })
+            }).addTo(map).bindPopup("<b>EMERGENZA</b>").openPopup();
+            
+            // Calcola le distanze
+            organizations.forEach(org => {
+                org.distance = emergencyLatLng.distanceTo(org.latlng); // Calcolo della distanza in metri
+            });
+
+            // Ordina le organizzazioni per distanza
+            const sortedOrgs = organizations.sort((a, b) => a.distance - b.distance);
+
+            // Aggiorna il pannello dei risultati
+            updateResults(sortedOrgs);
+        });
+    </script>
+
+</body>
+</html>
