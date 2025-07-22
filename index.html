@@ -51,33 +51,32 @@
         .modal-content h3 { margin-top: 0; }
         .modal-content p { line-height: 1.6; margin: 10px 0; }
 
-        /* Stili per la Barra degli Strumenti */
+        /* Stili per la Barra degli Strumenti (stile Dashboard) */
         #toolbar {
             position: absolute;
             top: 10px;
-            left: 58px; /* Spostato per non sovrapporsi ai controlli zoom */
+            left: 10px; 
             z-index: 1000;
             background: white;
             border-radius: 5px;
             box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            display: flex;
+            flex-direction: column;
         }
         .toolbar-button {
-            padding: 8px 12px;
-            display: inline-block;
+            padding: 12px 16px;
             background: white;
             color: #333;
             text-decoration: none;
             border: none;
-            border-right: 1px solid #ddd;
-            font-size: 12px;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
             cursor: pointer;
+            text-align: left;
         }
-        .toolbar-button:last-child {
-            border-right: none;
-        }
-        .toolbar-button:hover {
-            background-color: #f4f4f4;
-        }
+        .toolbar-button:first-child { border-radius: 5px 5px 0 0; }
+        .toolbar-button:last-child { border-bottom: none; border-radius: 0 0 5px 5px; }
+        .toolbar-button:hover { background-color: #f4f4f4; }
     </style>
 </head>
 <body>
@@ -122,7 +121,7 @@
             sighting: 'avvistamento', lat: 'lat', lon: 'lon'
         };
 
-        const map = L.map('map'); // Inizializza la mappa senza una vista predefinita
+        const map = L.map('map');
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -144,21 +143,14 @@
         const firefightingLayer = L.layerGroup().addTo(map);
         const sightingLayer = L.layerGroup().addTo(map);
         const cdbLayer = L.layerGroup().addTo(map);
-        const regionLayer = L.layerGroup();
-        const municipalityLayer = L.layerGroup();
+        const regionLayer = L.layerGroup().addTo(map); // Aggiunto alla mappa di default
+        const municipalityLayer = L.layerGroup().addTo(map); // Aggiunto alla mappa di default
 
         const organizations = [];
         let emergencyMarker;
         
-        function updateResults(sortedOrgs) { /* ... (codice invariato) ... */ }
+        // --- Funzioni di UI (invariate) ---
         const modal = document.getElementById('detail-modal');
-        function showModal(org) { /* ... (codice invariato) ... */ }
-        function hideModal() { modal.style.display = "none"; }
-        window.onclick = function(event) { if (event.target == modal) hideModal(); }
-        function processEmergency(latlng) { /* ... (codice invariato) ... */ }
-        async function searchLocation() { /* ... (codice invariato) ... */ }
-        
-        // --- FUNZIONI INVARIATE (le nascondo per brevità, sono nel codice completo sotto) ---
         function updateResults(sortedOrgs) {
             const contentDiv = document.getElementById('results-content');
             contentDiv.innerHTML = '';
@@ -180,6 +172,8 @@
             document.getElementById('modal-targa').innerText = org.plate;
             modal.style.display = "flex";
         }
+        function hideModal() { modal.style.display = "none"; }
+        window.onclick = function(event) { if (event.target == modal) hideModal(); }
         function processEmergency(latlng) {
             if (emergencyMarker) map.removeLayer(emergencyMarker);
             emergencyMarker = L.marker(latlng, { 
@@ -225,6 +219,7 @@
         fetch(sheetUrl)
             .then(response => response.text())
             .then(text => {
+                // ... (logica di caricamento e parsing del foglio google invariata) ...
                 const json = JSON.parse(text.substring(47).slice(0, -2));
                 const headers = json.table.cols.map(col => col.label.toLowerCase().trim());
                 const rows = json.table.rows;
@@ -271,7 +266,7 @@
                 map.on('click', e => processEmergency(e.latlng));
             })
             .catch(error => {
-                console.error('Errore nel caricamento dei dati:', error);
+                console.error('Errore nel caricamento dei dati delle organizzazioni:', error);
                 document.getElementById('status').innerHTML = `<p style="color:red;">Errore caricamento dati. Controlla la console.</p>`;
             });
 
@@ -279,32 +274,29 @@
         const regionUrl = 'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
         const municipalitiesUrl = 'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_municipalities.geojson';
 
-        // Stili per i confini
-        const regionStyle = {"color": "#0d6efd", "weight": 2.5, "opacity": 0.7, "fillOpacity": 0.05};
-        const municipalityStyle = {"color": "#6c757d", "weight": 1, "opacity": 0.5, "fillOpacity": 0.05};
+        const regionStyle = {"color": "#0d6efd", "weight": 3, "opacity": 0.8, "fillOpacity": 0.05};
+        const municipalityStyle = {"color": "#6c757d", "weight": 1, "opacity": 0.6, "fillOpacity": 0.05};
 
-        // Carica il confine regionale, lo aggiunge e centra la mappa su di esso
         fetch(regionUrl)
             .then(res => res.json())
             .then(data => {
                 const layer = L.geoJson(data, {
                     style: regionStyle,
-                    filter: (feature) => feature.properties.reg_istat_code_num === 17 // Codice ISTAT Basilicata
+                    filter: (feature) => feature.properties.reg_istat_code_num === 17
                 }).addTo(regionLayer);
-                map.fitBounds(layer.getBounds()); // Centra e zooma la mappa sulla regione
-            });
+                map.fitBounds(layer.getBounds());
+            }).catch(err => console.error("Errore caricamento confine regionale:", err));
             
-        // Carica i confini comunali
         fetch(municipalitiesUrl)
             .then(res => res.json())
             .then(data => {
                 L.geoJson(data, {
                     style: municipalityStyle,
-                    filter: (feature) => feature.properties.reg_istat_code_num === 17 // Filtra solo comuni della Basilicata
+                    filter: (feature) => feature.properties.reg_istat_code_num === 17
                 }).addTo(municipalityLayer);
-            });
+                 console.log("Confini comunali caricati.");
+            }).catch(err => console.error("Errore caricamento confini comunali:", err));
             
-        // Aggiunge tutti i livelli al controllo
         const overlayMaps = {
             "Confine Regionale": regionLayer,
             "Confini Comunali": municipalityLayer,
@@ -313,7 +305,6 @@
             "Consorzi di Bonifica": cdbLayer
         };
         L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
-
 
         document.getElementById('search-box').addEventListener('keyup', e => {
             if (e.key === 'Enter') document.getElementById('search-button').click();
