@@ -25,7 +25,7 @@
         }
         #search-button:hover { background-color: #0056b3; }
         #search-button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        #results-content .result-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        #results-content .result-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; line-height: 1.4; }
         h4 { margin-top: 0; }
         #status { text-align: center; padding: 10px; color: #555; font-style: italic; }
     </style>
@@ -43,11 +43,23 @@
     </div>
 
     <script>
-        // --- CONFIGURAZIONE ---
+        // --- CONFIGURAZIONE UTENTE ---
         const SHEET_ID = '1mNeb2ObFeD72o-WfNEzM4f2JfWl9iguqN4KGytpFS_Y';
-        // Assicurati che il nome della scheda in basso nel tuo foglio sia "Foglio1"
         const SHEET_NAME = 'Foglio1'; 
-        // --------------------
+        const NUMBER_OF_RESULTS = 10;
+        
+        // Nomi delle colonne nel tuo Foglio Google. Modificali se i tuoi sono diversi.
+        const COLUMN_NAMES = {
+            name: 'organizzazione',
+            type: 'tipo',
+            lat: 'lat',
+            lon: 'lon',
+            contactPerson: 'referente',
+            contactInfo: 'contatto',
+            vehicle: 'mezzo',
+            plate: 'targa'
+        };
+        // -----------------------------
 
         const map = L.map('map').setView([40.5, 15.8], 9);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -60,10 +72,14 @@
         function updateResults(sortedOrgs) {
             const contentDiv = document.getElementById('results-content');
             contentDiv.innerHTML = '';
-            sortedOrgs.slice(0, 5).forEach(org => {
+            sortedOrgs.slice(0, NUMBER_OF_RESULTS).forEach(org => {
                 const item = document.createElement('div');
                 item.className = 'result-item';
-                item.innerHTML = `<b>${org.name}</b><br><i>Tipo: ${org.type}</i><br>Distanza: ${(org.distance / 1000).toFixed(2)} km`;
+                item.innerHTML = `<b>${org.name}</b><br>
+                                  Referente: ${org.contactPerson}<br>
+                                  Contatto: ${org.contactInfo}<br>
+                                  Mezzo: ${org.vehicle} (Targa: ${org.plate})<br>
+                                  <b>Distanza: ${(org.distance / 1000).toFixed(2)} km</b>`;
                 contentDiv.appendChild(item);
             });
         }
@@ -115,30 +131,42 @@
             .then(response => response.text())
             .then(text => {
                 const json = JSON.parse(text.substring(47).slice(0, -2));
-                const headers = json.table.cols.map(col => col.label);
+                const headers = json.table.cols.map(col => col.label.toLowerCase().trim());
                 const rows = json.table.rows;
                 
-                const idxLat = headers.indexOf('lat');
-                const idxLon = headers.indexOf('lon');
-                const idxName = headers.indexOf('organizzazione');
-                const idxType = headers.indexOf('tipo');
+                const idx = {
+                    lat: headers.indexOf(COLUMN_NAMES.lat),
+                    lon: headers.indexOf(COLUMN_NAMES.lon),
+                    name: headers.indexOf(COLUMN_NAMES.name),
+                    type: headers.indexOf(COLUMN_NAMES.type),
+                    contactPerson: headers.indexOf(COLUMN_NAMES.contactPerson),
+                    contactInfo: headers.indexOf(COLUMN_NAMES.contactInfo),
+                    vehicle: headers.indexOf(COLUMN_NAMES.vehicle),
+                    plate: headers.indexOf(COLUMN_NAMES.plate)
+                };
 
-                if (idxLat === -1 || idxLon === -1) {
-                    throw new Error("Le colonne 'lat' o 'lon' non sono state trovate. Controlla le intestazioni nel Foglio Google.");
+                if (idx.lat === -1 || idx.lon === -1) {
+                    throw new Error(`Le colonne '${COLUMN_NAMES.lat}' o '${COLUMN_NAMES.lon}' non sono state trovate.`);
                 }
 
                 rows.forEach(row => {
-                    const lat = row.c[idxLat] ? row.c[idxLat].v : null;
-                    const lon = row.c[idxLon] ? row.c[idxLon].v : null;
+                    const lat = row.c[idx.lat] ? row.c[idx.lat].v : null;
+                    const lon = row.c[idx.lon] ? row.c[idx.lon].v : null;
 
                     if (typeof lat === 'number' && typeof lon === 'number') {
                         const org = {
-                            name: row.c[idxName] ? row.c[idxName].v : 'Senza nome',
-                            type: row.c[idxType] ? row.c[idxType].v : 'Non specificato',
+                            name: (idx.name > -1 && row.c[idx.name]) ? row.c[idx.name].v : 'N/D',
+                            type: (idx.type > -1 && row.c[idx.type]) ? row.c[idx.type].v : 'N/D',
+                            contactPerson: (idx.contactPerson > -1 && row.c[idx.contactPerson]) ? row.c[idx.contactPerson].v : 'N/D',
+                            contactInfo: (idx.contactInfo > -1 && row.c[idx.contactInfo]) ? row.c[idx.contactInfo].v : 'N/D',
+                            vehicle: (idx.vehicle > -1 && row.c[idx.vehicle]) ? row.c[idx.vehicle].v : 'N/D',
+                            plate: (idx.plate > -1 && row.c[idx.plate]) ? row.c[idx.plate].v : 'N/D',
                             latlng: L.latLng(lat, lon)
                         };
                         organizations.push(org);
-                        L.marker(org.latlng).addTo(map).bindPopup(`<b>${org.name}</b><br>Tipo: ${org.type}`);
+                        
+                        const popupContent = `<b>${org.name}</b><br>Referente: ${org.contactPerson}<br>Contatto: ${org.contactInfo}`;
+                        L.marker(org.latlng).addTo(map).bindPopup(popupContent);
                     }
                 });
 
@@ -151,7 +179,7 @@
             })
             .catch(error => {
                 console.error('Errore nel caricamento dei dati:', error);
-                document.getElementById('status').innerHTML = '<p style="color:red;">Errore caricamento dati. Controlla l\'ID del foglio, il nome del foglio e che le impostazioni di condivisione siano su "Chiunque abbia il link".</p>';
+                document.getElementById('status').innerHTML = `<p style="color:red;">Errore caricamento dati. Controlla la console per i dettagli.</p>`;
             });
 
         document.getElementById('search-box').addEventListener('keyup', e => {
