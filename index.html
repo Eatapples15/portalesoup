@@ -16,8 +16,7 @@
         #panel {
             position: absolute; top: 10px; right: 10px; z-index: 1000; background: white;
             padding: 15px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-            width: 380px; /* Aumentata la larghezza del pannello laterale */
-            max-height: 90%; overflow-y: auto;
+            width: 380px; max-height: 90%; overflow-y: auto;
         }
         #search-box { width: 100%; box-sizing: border-box; padding: 8px; font-size: 14px; margin-bottom: 5px; }
         #search-button {
@@ -44,18 +43,41 @@
         .modal-content {
             background-color: #fefefe; margin: auto; padding: 25px;
             border: 1px solid #888; border-radius: 8px; width: 90%; 
-            max-width: 600px; /* Aumentata la larghezza massima della finestra di dettaglio */
+            max-width: 600px;
             position: relative;
         }
-        .modal-close {
-            color: #aaa; float: right; font-size: 28px; font-weight: bold;
-        }
-        .modal-close:hover, .modal-close:focus {
-            color: black; text-decoration: none; cursor: pointer;
-        }
+        .modal-close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
+        .modal-close:hover, .modal-close:focus { color: black; text-decoration: none; cursor: pointer; }
         .modal-content h3 { margin-top: 0; }
         .modal-content p { line-height: 1.6; margin: 10px 0; }
 
+        /* Stili per la Barra degli Strumenti */
+        #toolbar {
+            position: absolute;
+            top: 10px;
+            left: 58px; /* Spostato per non sovrapporsi ai controlli zoom */
+            z-index: 1000;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+        }
+        .toolbar-button {
+            padding: 8px 12px;
+            display: inline-block;
+            background: white;
+            color: #333;
+            text-decoration: none;
+            border: none;
+            border-right: 1px solid #ddd;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .toolbar-button:last-child {
+            border-right: none;
+        }
+        .toolbar-button:hover {
+            background-color: #f4f4f4;
+        }
     </style>
 </head>
 <body>
@@ -71,6 +93,12 @@
         <div id="results-content"></div>
     </div>
 
+    <div id="toolbar">
+        <a href="https://www.formazionesicurezza.org/protezionecivile/acqua/" target="_blank" rel="noopener noreferrer" class="toolbar-button">Risorse Idriche</a>
+        <button class="toolbar-button">Altro 1</button>
+        <button class="toolbar-button">Altro 2</button>
+    </div>
+
     <div id="detail-modal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="hideModal()">&times;</span>
@@ -84,7 +112,6 @@
     </div>
 
     <script>
-        // --- CONFIGURAZIONE UTENTE ---
         const SHEET_ID = '1mNeb2ObFeD72o-WfNEzM4f2JfWl9iguqN4KGytpFS_Y';
         const SHEET_NAME = 'Foglio1'; 
         const NUMBER_OF_RESULTS = 10;
@@ -94,9 +121,9 @@
             contactInfo: 'telefono', vehicle: 'mezzo', plate: 'targa',
             sighting: 'avvistamento', lat: 'lat', lon: 'lon'
         };
-        // -----------------------------
 
-        const map = L.map('map').setView([40.5, 15.8], 9);
+        const map = L.map('map'); // Inizializza la mappa senza una vista predefinita
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
@@ -117,10 +144,21 @@
         const firefightingLayer = L.layerGroup().addTo(map);
         const sightingLayer = L.layerGroup().addTo(map);
         const cdbLayer = L.layerGroup().addTo(map);
+        const regionLayer = L.layerGroup();
+        const municipalityLayer = L.layerGroup();
 
         const organizations = [];
         let emergencyMarker;
         
+        function updateResults(sortedOrgs) { /* ... (codice invariato) ... */ }
+        const modal = document.getElementById('detail-modal');
+        function showModal(org) { /* ... (codice invariato) ... */ }
+        function hideModal() { modal.style.display = "none"; }
+        window.onclick = function(event) { if (event.target == modal) hideModal(); }
+        function processEmergency(latlng) { /* ... (codice invariato) ... */ }
+        async function searchLocation() { /* ... (codice invariato) ... */ }
+        
+        // --- FUNZIONI INVARIATE (le nascondo per brevità, sono nel codice completo sotto) ---
         function updateResults(sortedOrgs) {
             const contentDiv = document.getElementById('results-content');
             contentDiv.innerHTML = '';
@@ -133,8 +171,6 @@
                 contentDiv.appendChild(item);
             });
         }
-        
-        const modal = document.getElementById('detail-modal');
         function showModal(org) {
             document.getElementById('modal-title').innerText = org.name;
             document.getElementById('modal-comune').innerText = org.municipality;
@@ -144,9 +180,6 @@
             document.getElementById('modal-targa').innerText = org.plate;
             modal.style.display = "flex";
         }
-        function hideModal() { modal.style.display = "none"; }
-        window.onclick = function(event) { if (event.target == modal) hideModal(); }
-
         function processEmergency(latlng) {
             if (emergencyMarker) map.removeLayer(emergencyMarker);
             emergencyMarker = L.marker(latlng, { 
@@ -162,7 +195,6 @@
             document.getElementById('status').style.display = 'none';
             updateResults(sortedOrgs);
         }
-
         async function searchLocation() {
             const query = document.getElementById('search-box').value;
             if (!query) return;
@@ -187,16 +219,15 @@
                 statusDiv.style.display = 'none';
             }
         }
-        
-        const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
 
+        // --- CARICAMENTO DATI ORGANIZZAZIONI ---
+        const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
         fetch(sheetUrl)
             .then(response => response.text())
             .then(text => {
                 const json = JSON.parse(text.substring(47).slice(0, -2));
                 const headers = json.table.cols.map(col => col.label.toLowerCase().trim());
                 const rows = json.table.rows;
-                
                 const idx = {
                     name: headers.indexOf(COLUMN_NAMES.name), municipality: headers.indexOf(COLUMN_NAMES.municipality),
                     contactPerson: headers.indexOf(COLUMN_NAMES.contactPerson), contactInfo: headers.indexOf(COLUMN_NAMES.contactInfo),
@@ -204,13 +235,10 @@
                     sighting: headers.indexOf(COLUMN_NAMES.sighting), lat: headers.indexOf(COLUMN_NAMES.lat),
                     lon: headers.indexOf(COLUMN_NAMES.lon)
                 };
-
                 if (idx.lat === -1 || idx.lon === -1) throw new Error(`Colonne '${COLUMN_NAMES.lat}' o '${COLUMN_NAMES.lon}' non trovate.`);
-
                 rows.forEach(row => {
                     const lat = row.c[idx.lat] ? row.c[idx.lat].v : null;
                     const lon = row.c[idx.lon] ? row.c[idx.lon].v : null;
-
                     if (typeof lat === 'number' && typeof lon === 'number') {
                         const org = {
                             name: (idx.name > -1 && row.c[idx.name]) ? row.c[idx.name].v : 'N/D',
@@ -223,33 +251,18 @@
                             latlng: L.latLng(lat, lon)
                         };
                         organizations.push(org);
-                        
-                        let markerIcon;
-                        let targetLayer;
-
+                        let markerIcon, targetLayer;
                         if (org.name && org.name.toUpperCase() === 'CDB') {
-                            markerIcon = cdbIcon;
-                            targetLayer = cdbLayer;
+                            markerIcon = cdbIcon; targetLayer = cdbLayer;
                         } else if (org.sighting && org.sighting.toLowerCase() === 'si') {
-                            markerIcon = sightingIcon;
-                            targetLayer = sightingLayer;
+                            markerIcon = sightingIcon; targetLayer = sightingLayer;
                         } else {
-                            markerIcon = firefightingIcon;
-                            targetLayer = firefightingLayer;
+                            markerIcon = firefightingIcon; targetLayer = firefightingLayer;
                         }
-                        
                         const popupContent = `<b>${org.name}</b><br>Comune: ${org.municipality}<br>Contatto: ${org.contactInfo}`;
                         L.marker(org.latlng, {icon: markerIcon}).addTo(targetLayer).bindPopup(popupContent);
                     }
                 });
-
-                const overlayMaps = {
-                    "Squadre Operative": firefightingLayer,
-                    "Squadre Avvistamento": sightingLayer,
-                    "Consorzi di Bonifica": cdbLayer
-                };
-                L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
-
                 console.log(`${organizations.length} organizzazioni caricate.`);
                 document.getElementById('search-box').disabled = false;
                 document.getElementById('search-button').disabled = false;
@@ -259,8 +272,48 @@
             })
             .catch(error => {
                 console.error('Errore nel caricamento dei dati:', error);
-                document.getElementById('status').innerHTML = `<p style="color:red;">Errore caricamento dati. Controlla la console per i dettagli.</p>`;
+                document.getElementById('status').innerHTML = `<p style="color:red;">Errore caricamento dati. Controlla la console.</p>`;
             });
+
+        // --- CARICAMENTO CONFINI ---
+        const regionUrl = 'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
+        const municipalitiesUrl = 'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_municipalities.geojson';
+
+        // Stili per i confini
+        const regionStyle = {"color": "#0d6efd", "weight": 2.5, "opacity": 0.7, "fillOpacity": 0.05};
+        const municipalityStyle = {"color": "#6c757d", "weight": 1, "opacity": 0.5, "fillOpacity": 0.05};
+
+        // Carica il confine regionale, lo aggiunge e centra la mappa su di esso
+        fetch(regionUrl)
+            .then(res => res.json())
+            .then(data => {
+                const layer = L.geoJson(data, {
+                    style: regionStyle,
+                    filter: (feature) => feature.properties.reg_istat_code_num === 17 // Codice ISTAT Basilicata
+                }).addTo(regionLayer);
+                map.fitBounds(layer.getBounds()); // Centra e zooma la mappa sulla regione
+            });
+            
+        // Carica i confini comunali
+        fetch(municipalitiesUrl)
+            .then(res => res.json())
+            .then(data => {
+                L.geoJson(data, {
+                    style: municipalityStyle,
+                    filter: (feature) => feature.properties.reg_istat_code_num === 17 // Filtra solo comuni della Basilicata
+                }).addTo(municipalityLayer);
+            });
+            
+        // Aggiunge tutti i livelli al controllo
+        const overlayMaps = {
+            "Confine Regionale": regionLayer,
+            "Confini Comunali": municipalityLayer,
+            "Squadre Operative": firefightingLayer,
+            "Squadre Avvistamento": sightingLayer,
+            "Consorzi di Bonifica": cdbLayer
+        };
+        L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+
 
         document.getElementById('search-box').addEventListener('keyup', e => {
             if (e.key === 'Enter') document.getElementById('search-button').click();
