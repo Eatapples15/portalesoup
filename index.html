@@ -168,19 +168,28 @@
             .on('ready', function() {
                 this.eachLayer(function(layer) {
                     const props = layer.feature.properties;
-                    const orgData = {
-                        name: props.organizzazione || 'Senza nome',
-                        type: props.tipo || 'Non specificato',
-                        latlng: layer.getLatLng(),
-                        layer: layer
-                    };
-                    organizations.push(orgData);
+                    
+                    // **** NUOVO CONTROLLO ****
+                    // Processa la riga solo se le coordinate lat e lon sono presenti e valide.
+                    if (props.lat && props.lon && props.lat.trim() !== '' && props.lon.trim() !== '') {
+                        const orgData = {
+                            name: props.organizzazione || 'Senza nome',
+                            type: props.tipo || 'Non specificato',
+                            latlng: layer.getLatLng(),
+                            layer: layer
+                        };
+                        organizations.push(orgData);
 
-                    const popupContent = `<b>${orgData.name}</b><br>Tipo: ${orgData.type}`;
-                    layer.bindPopup(popupContent);
+                        const popupContent = `<b>${orgData.name}</b><br>Tipo: ${orgData.type}`;
+                        layer.bindPopup(popupContent);
+                    } else {
+                        // Altrimenti, ignora la riga e vai alla successiva.
+                        console.log('Riga saltata perché mancano le coordinate:', props);
+                    }
                 });
                 
-                console.log(`${organizations.length} organizzazioni caricate.`);
+                // **** LOGICA DI ABILITAZIONE ****
+                console.log(`${organizations.length} organizzazioni caricate sulla mappa.`);
                 document.getElementById('search-box').disabled = false;
                 document.getElementById('search-button').disabled = false;
                 document.getElementById('search-box').placeholder = "Indirizzo o Lat,Lon";
