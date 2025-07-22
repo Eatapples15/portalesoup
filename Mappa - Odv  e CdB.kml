@@ -1,0 +1,952 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Mappa - Odv  e CdB</name>
+    <description/>
+    <Style id="icon-1899-0288D1-normal">
+      <IconStyle>
+        <color>ffd18802</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-0288D1-highlight">
+      <IconStyle>
+        <color>ffd18802</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-0288D1">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-0288D1-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-0288D1-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-9C27B0-normal">
+      <IconStyle>
+        <color>ffb0279c</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-9C27B0-highlight">
+      <IconStyle>
+        <color>ffb0279c</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-9C27B0">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-9C27B0-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-9C27B0-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Folder>
+      <name>Livello senza titolo</name>
+      <Placemark>
+        <name>Anpas lavello</name>
+        <description>contatti: 3317326564 - 3382929762</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.7918869,41.0413455,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Anpas Latronico</name>
+        <description>contatti: 3349172040 - 3937282387</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.0115113,40.0882415,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Anpas Venosa</name>
+        <description>contatti: 3516524480 - 3337723022</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.815559,40.9606047,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Anpas Palazzo</name>
+        <description>contatti: 3474773779</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.9806344,40.9307807,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Endas Corleto</name>
+        <description>contatti: 334025100</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.0411113,40.3792105,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>I falchi della Lucania</name>
+        <description>contatti: 3351574404</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.8030789,40.6381346,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Ultraleggero</name>
+        <description>contatti: 3357288537</description>
+        <styleUrl>#icon-1899-0288D1</styleUrl>
+        <Point>
+          <coordinates>
+            15.7838871,40.5740347,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Guardie del Cervo</name>
+        <description>contatti: 3887907583</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.9711992,40.459108,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>PC POLLINO</name>
+        <description>contatti: 3286461690</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.0382786,39.9533469,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Società di Salvamento</name>
+        <description>contatti: 3299608500</description>
+        <styleUrl>#icon-1899-0288D1</styleUrl>
+        <Point>
+          <coordinates>
+            16.8337558,40.3597528,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Dedalo</name>
+        <description>contatti: 3405710421</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.7836403,40.574157,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Misericordia Maschito</name>
+        <description>contatti: 3886025861/ 3203141280 / 3200605890/3385200118</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.8296764,40.9080775,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Accettura</name>
+        <description>contatti: 3356731241</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.1578961,40.4920667,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Acerenza</name>
+        <description>contatti: 3334520054</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.939283,40.7937844,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Aliano</name>
+        <description>contatti: 3388762046</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.2299175,40.3138397,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Armento</name>
+        <description>contatti: 3461597150</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.06523,40.3061142,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Atella</name>
+        <description>contatti: 3473497409</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6541349,40.8757265,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Avigliano</name>
+        <description>contatti: 3482324868</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.7141698,40.7300063,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Brienza</name>
+        <description>contatti: 3897978507</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6276392,40.4764639,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Cancellara</name>
+        <description>contatti: 3278410037</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.9268889,40.7291956,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Castelgrande</name>
+        <description>contatti: 3492389253</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.4299817,40.785639,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Castelluccio Sup.</name>
+        <description>contatti: 3480513420</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.9736016,40.0096682,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name><![CDATA[Gruppo Lucano Castronuovo di Sant'Andrea]]></name>
+        <description>contatti: 3405763329</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.1861754,40.1888975,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Chiaromonte</name>
+        <description>contatti: 3479755158</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.2150664,40.1238977,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Cirigliano</name>
+        <description>contatti: 3477530052</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.1699858,40.3938394,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Filiano</name>
+        <description>contatti: 3451853820</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.7091496,40.8102616,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Forenza</name>
+        <description>contatti: 3292011531</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.8579093,40.8579,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Gorgoglione</name>
+        <description>contatti: 3892679276</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.1467467,40.3918946,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Laurenzana</name>
+        <description>contatti: 3471081995</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.9716583,40.458883,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Lauria</name>
+        <description>contatti: 3343304873 - 3343304873</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.8438761,40.0507607,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Lavello</name>
+        <description>contatti: 3381639023</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.7942049,41.0458131,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Maratea</name>
+        <description>contatti: 3204438201</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.718571,39.998117,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Marsico Nuovo</name>
+        <description>contatti: 3393034641</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.7352729,40.4202228,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Marsico Vetere</name>
+        <description>contatti: 3384546065</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.8263962,40.3760944,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Matera</name>
+        <description>contatti: 3337954524</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.6043346,40.6656813,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Missanello</name>
+        <description>contatti: 3393078435</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.1664954,40.2841828,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Moliterno</name>
+        <description>contatti: 3333344673</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.8694817,40.2396344,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Montemurro</name>
+        <description>contatti: 3385496081</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.9918551,40.2970745,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Muro Lucano</name>
+        <description>contatti: 3485481293</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.4856018,40.7487558,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Paterno</name>
+        <description>contatti: 3402748400</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            14.9014839,37.5669642,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Pescopagano</name>
+        <description>contatti: 3496017422</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.3981726,40.8342464,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Pietragalla</name>
+        <description>contatti: 3803116608</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.8790926,40.7464437,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Potenza</name>
+        <description>contatti: 3290388385</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.805568,40.6370273,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Policoro</name>
+        <description>contatti: 3661951801</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.6797938,40.2137185,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Roccanova</name>
+        <description>contatti: 3887298605</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.2041592,40.2124391,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano San Costantino Albanese</name>
+        <description>contatti: 3428418803</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.3049179,40.0365984,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano San Fele</name>
+        <description>contatti: 3472873019</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.5403988,40.8203179,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano San Girogio</name>
+        <description>contatti: 3287513058</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.7989597,40.7707526,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name><![CDATA[Gruppo Lucano san Martino D'Agri]]></name>
+        <description>contatti: 3462301459</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.0537633,40.2402282,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano San Severino Lucano </name>
+        <description>contatti: 3409408518</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.1388762,40.0203652,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name><![CDATA[Gruppo Lucano Sant'Angelo le Fratte]]></name>
+        <description>contatti: 3458240241</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.5595446,40.5455441,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Sasso di Castalda</name>
+        <description>contatti: 3285461761</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6783701,40.4854139,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Satriano di Lucania</name>
+        <description>contatti: 3465032825</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6404159,40.5413972,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Savoia di Lucania</name>
+        <description>contatti: 3277176531</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.551679,40.5695768,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Scanzano Jonico</name>
+        <description>contatti: 3334025091</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.698408,40.248321,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Senise</name>
+        <description>contatti: 3486095720</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.2895071,40.1471409,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Spinoso</name>
+        <description>contatti: 3342694229</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.9679661,40.2696013,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Terranova</name>
+        <description>contatti: 3471978845</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.2958914,39.9792608,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Tramutola</name>
+        <description>contatti: 3296523248</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.7900616,40.3178005,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Tricarico</name>
+        <description>contatti: 3477622162 - 328 826 2044</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.1497045,40.6182397,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Tito</name>
+        <description>contatti: 3452162797</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6760205,40.5827707,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Tursi</name>
+        <description>contatti: 3770896457</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.4692409,40.2467861,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo lucano Vaglio</name>
+        <description>contatti: 3807330695</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.9194168,40.6673086,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gruppo Lucano Viggianello</name>
+        <description>contatti: 3881872270</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.0846362,39.9734615,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Cittadino Vigile</name>
+        <description>contatti: 3396426497 - 3489794585</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.6910297,40.4129262,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name><![CDATA[Vola Sant'Angelo le Fratte]]></name>
+        <description>contatti: 3804946389 - 3285731967 - 3804946389</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.5593944,40.5454626,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Vola Oppido Lucano</name>
+        <description>contatti: 3294757371</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.9909949,40.7635315,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Vola Irsina</name>
+        <description>contatti: 3473655433</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.2391941,40.7516456,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Vola Baragiano</name>
+        <description>contatti: 3408163244 - 3488023189</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.5932159,40.6801703,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Vola Teana </name>
+        <description>contatti: 3384104761</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.1520349,40.1254654,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Vola Lauria</name>
+        <description>contatti: 3283576949 - 3286894513</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.8359797,40.0526003,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Vola Pietrapertosa</name>
+        <description>contatti: 3661916501 - 3661916501</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.0633053,40.5180338,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Vola Genzano di Lucania</name>
+        <description>contatti: 3384104761 - 3496043208 </description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.0323094,40.8461111,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Vola Ruoti</name>
+        <description>contatti: 342099967 -  3470043810</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6797142,40.7183001,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Vola San Mauro Forte</name>
+        <description>contatti: 3897969117 - 3391494650 - 3283230370</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.2492366,40.4863916,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Vola Irsina</name>
+        <description>contatti: 3275403630 -  3473655433</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            16.2381212,40.7513855,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>PC Vietri</name>
+        <description>contatti: 3489562775</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.5050984,40.59862,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Aquile Lucane Tito</name>
+        <description>contatti: 3355439572</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6765468,40.5824951,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Aquile Lucane Potenza</name>
+        <description>contatti: 3476141880</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.8039372,40.6374832,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Aquile Lucane Satriano</name>
+        <description>contatti: 3406860331</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6404159,40.5413972,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Aquile Lune Pignola</name>
+        <description>contatti: 3936171671</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.7842011,40.5742221,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Aquile Lucane Picerno</name>
+        <description>contatti: 3393883111</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6411897,40.6410572,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name><![CDATA[Aquile Lucane Sant'Angelo le Fratte]]></name>
+        <description>contatti: 3285737167</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.5592211,40.5455045,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Aquile Lucane Brienza</name>
+        <description>contatti: 3895311531</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6280254,40.4767087,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Aquile Lucane Tito</name>
+        <description>contatti: 3465799393</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.6759218,40.5826199,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Aquile Lucane Pignola</name>
+        <description>contatti: 3497293071</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.784451,40.5743151,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>San Vito Martire</name>
+        <description>contatti: 3457268598 - 3484662959</description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <Point>
+          <coordinates>
+            15.4989904,40.8462344,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>
