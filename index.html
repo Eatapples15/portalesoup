@@ -25,12 +25,40 @@
         }
         #search-button:hover { background-color: #0056b3; }
         #search-button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        #results-content .result-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; line-height: 1.5; }
+        #results-content .result-item { 
+            padding: 8px; border-bottom: 1px solid #eee; font-size: 14px; line-height: 1.5; cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #results-content .result-item:hover { background-color: #f0f8ff; }
         h4 { margin-top: 0; }
         #status { text-align: center; padding: 10px; color: #555; font-style: italic; }
+
+        /* Stili per la finestra Modale */
+        .modal {
+            display: none; /* Nascosto di default */
+            position: fixed; z-index: 2000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto; 
+            background-color: rgba(0,0,0,0.5); /* Sfondo nero semi-trasparente */
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe; margin: auto; padding: 20px;
+            border: 1px solid #888; border-radius: 8px; width: 80%; max-width: 500px;
+            position: relative;
+        }
+        .modal-close {
+            color: #aaa; float: right; font-size: 28px; font-weight: bold;
+        }
+        .modal-close:hover, .modal-close:focus {
+            color: black; text-decoration: none; cursor: pointer;
+        }
+        .modal-content h3 { margin-top: 0; }
+        .modal-content p { line-height: 1.6; }
+
     </style>
 </head>
 <body>
+
     <div id="map"></div>
     <div id="panel">
         <h4>Cerca Emergenza</h4>
@@ -42,23 +70,28 @@
         <div id="results-content"></div>
     </div>
 
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="hideModal()">&times;</span>
+            <h3 id="modal-title"></h3>
+            <p><strong>Comune:</strong> <span id="modal-comune"></span></p>
+            <p><strong>Responsabile:</strong> <span id="modal-referente"></span></p>
+            <p><strong>Contatto:</strong> <span id="modal-telefono"></span></p>
+            <p><strong>Mezzo:</strong> <span id="modal-mezzo"></span></p>
+            <p><strong>Targa:</strong> <span id="modal-targa"></span></p>
+        </div>
+    </div>
+
     <script>
         // --- CONFIGURAZIONE UTENTE ---
         const SHEET_ID = '1mNeb2ObFeD72o-WfNEzM4f2JfWl9iguqN4KGytpFS_Y';
         const SHEET_NAME = 'Foglio1'; 
         const NUMBER_OF_RESULTS = 10;
         
-        // Nomi delle colonne nel Foglio Google (resi insensibili a maiuscole/minuscole dal codice)
         const COLUMN_NAMES = {
-            name: 'associazione',
-            municipality: 'comune',
-            contactPerson: 'referente',
-            contactInfo: 'telefono',
-            vehicle: 'mezzo',
-            plate: 'targa',
-            sighting: 'avvistamento',
-            lat: 'lat',
-            lon: 'lon'
+            name: 'associazione', municipality: 'comune', contactPerson: 'referente',
+            contactInfo: 'telefono', vehicle: 'mezzo', plate: 'targa',
+            sighting: 'avvistamento', lat: 'lat', lon: 'lon'
         };
         // -----------------------------
 
@@ -66,19 +99,16 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-
-        // Definiamo le icone personalizzate
-        const blueIcon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        
+        // --- DEFINIZIONE ICONE PERSONALIZZATE ---
+        const firefightingIcon = L.icon({
+            iconUrl: 'https://img.icons8.com/plasticine/100/fire-extinguisher.png', // Icona Estintore
+            iconSize: [38, 38], iconAnchor: [19, 38], popupAnchor: [0, -38]
         });
-        const greenIcon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        const sightingIcon = L.icon({
+            iconUrl: 'https://img.icons8.com/plasticine/100/binoculars.png', // Icona Binocolo
+            iconSize: [38, 38], iconAnchor: [19, 38], popupAnchor: [0, -38]
         });
-
 
         const organizations = [];
         let emergencyMarker;
@@ -90,12 +120,32 @@
                 const item = document.createElement('div');
                 item.className = 'result-item';
                 item.innerHTML = `<b>${org.name}</b> (${org.municipality})<br>
-                                  Responsabile: ${org.contactPerson}<br>
-                                  Contatto: ${org.contactInfo}<br>
-                                  Mezzo: ${org.vehicle} (Targa: ${org.plate})<br>
-                                  <b>Distanza: ${(org.distance / 1000).toFixed(2)} km</b>`;
+                                  <i>Distanza: ${(org.distance / 1000).toFixed(2)} km</i>`;
+                // Aggiungi l'evento click per aprire la finestra di dettaglio
+                item.onclick = () => showModal(org);
                 contentDiv.appendChild(item);
             });
+        }
+        
+        // --- FUNZIONI PER LA FINESTRA MODALE ---
+        const modal = document.getElementById('detail-modal');
+        function showModal(org) {
+            document.getElementById('modal-title').innerText = org.name;
+            document.getElementById('modal-comune').innerText = org.municipality;
+            document.getElementById('modal-referente').innerText = org.contactPerson;
+            document.getElementById('modal-telefono').innerText = org.contactInfo;
+            document.getElementById('modal-mezzo').innerText = org.vehicle;
+            document.getElementById('modal-targa').innerText = org.plate;
+            modal.style.display = "flex";
+        }
+        function hideModal() {
+            modal.style.display = "none";
+        }
+        // Chiudi la finestra se l'utente clicca fuori dal contenuto
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                hideModal();
+            }
         }
 
         function processEmergency(latlng) {
@@ -149,14 +199,10 @@
                 const rows = json.table.rows;
                 
                 const idx = {
-                    name: headers.indexOf(COLUMN_NAMES.name),
-                    municipality: headers.indexOf(COLUMN_NAMES.municipality),
-                    contactPerson: headers.indexOf(COLUMN_NAMES.contactPerson),
-                    contactInfo: headers.indexOf(COLUMN_NAMES.contactInfo),
-                    vehicle: headers.indexOf(COLUMN_NAMES.vehicle),
-                    plate: headers.indexOf(COLUMN_NAMES.plate),
-                    sighting: headers.indexOf(COLUMN_NAMES.sighting),
-                    lat: headers.indexOf(COLUMN_NAMES.lat),
+                    name: headers.indexOf(COLUMN_NAMES.name), municipality: headers.indexOf(COLUMN_NAMES.municipality),
+                    contactPerson: headers.indexOf(COLUMN_NAMES.contactPerson), contactInfo: headers.indexOf(COLUMN_NAMES.contactInfo),
+                    vehicle: headers.indexOf(COLUMN_NAMES.vehicle), plate: headers.indexOf(COLUMN_NAMES.plate),
+                    sighting: headers.indexOf(COLUMN_NAMES.sighting), lat: headers.indexOf(COLUMN_NAMES.lat),
                     lon: headers.indexOf(COLUMN_NAMES.lon)
                 };
 
@@ -179,12 +225,12 @@
                         };
                         organizations.push(org);
                         
-                        let markerIcon = blueIcon;
+                        let markerIcon = firefightingIcon; // Icona di default
                         if (org.sighting && org.sighting.toLowerCase() === 'si') {
-                            markerIcon = greenIcon;
+                            markerIcon = sightingIcon; // Icona per avvistamento
                         }
                         
-                        const popupContent = `<b>${org.name}</b><br>Comune: ${org.municipality}<br>Referente: ${org.contactPerson}<br>Contatto: ${org.contactInfo}`;
+                        const popupContent = `<b>${org.name}</b><br>Comune: ${org.municipality}<br>Contatto: ${org.contactInfo}`;
                         L.marker(org.latlng, {icon: markerIcon}).addTo(map).bindPopup(popupContent);
                     }
                 });
