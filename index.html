@@ -16,7 +16,7 @@
         #panel {
             position: absolute; top: 10px; right: 10px; z-index: 1000; background: white;
             padding: 15px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-            width: 320px; max-height: 90%; overflow-y: auto;
+            width: 340px; max-height: 90%; overflow-y: auto;
         }
         #search-box { width: 100%; box-sizing: border-box; padding: 8px; font-size: 14px; margin-bottom: 5px; }
         #search-button {
@@ -25,7 +25,7 @@
         }
         #search-button:hover { background-color: #0056b3; }
         #search-button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        #results-content .result-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; line-height: 1.4; }
+        #results-content .result-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; line-height: 1.5; }
         h4 { margin-top: 0; }
         #status { text-align: center; padding: 10px; color: #555; font-style: italic; }
     </style>
@@ -48,16 +48,17 @@
         const SHEET_NAME = 'Foglio1'; 
         const NUMBER_OF_RESULTS = 10;
         
-        // Nomi delle colonne nel tuo Foglio Google. Modificali se i tuoi sono diversi.
+        // Nomi delle colonne nel Foglio Google (resi insensibili a maiuscole/minuscole dal codice)
         const COLUMN_NAMES = {
-            name: 'organizzazione',
-            type: 'tipo',
-            lat: 'lat',
-            lon: 'lon',
+            name: 'associazione',
+            municipality: 'comune',
             contactPerson: 'referente',
-            contactInfo: 'contatto',
+            contactInfo: 'telefono',
             vehicle: 'mezzo',
-            plate: 'targa'
+            plate: 'targa',
+            sighting: 'avvistamento',
+            lat: 'lat',
+            lon: 'lon'
         };
         // -----------------------------
 
@@ -65,6 +66,19 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+
+        // Definiamo le icone personalizzate
+        const blueIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        });
+        const greenIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        });
+
 
         const organizations = [];
         let emergencyMarker;
@@ -75,8 +89,8 @@
             sortedOrgs.slice(0, NUMBER_OF_RESULTS).forEach(org => {
                 const item = document.createElement('div');
                 item.className = 'result-item';
-                item.innerHTML = `<b>${org.name}</b><br>
-                                  Referente: ${org.contactPerson}<br>
+                item.innerHTML = `<b>${org.name}</b> (${org.municipality})<br>
+                                  Responsabile: ${org.contactPerson}<br>
                                   Contatto: ${org.contactInfo}<br>
                                   Mezzo: ${org.vehicle} (Targa: ${org.plate})<br>
                                   <b>Distanza: ${(org.distance / 1000).toFixed(2)} km</b>`;
@@ -135,19 +149,18 @@
                 const rows = json.table.rows;
                 
                 const idx = {
-                    lat: headers.indexOf(COLUMN_NAMES.lat),
-                    lon: headers.indexOf(COLUMN_NAMES.lon),
                     name: headers.indexOf(COLUMN_NAMES.name),
-                    type: headers.indexOf(COLUMN_NAMES.type),
+                    municipality: headers.indexOf(COLUMN_NAMES.municipality),
                     contactPerson: headers.indexOf(COLUMN_NAMES.contactPerson),
                     contactInfo: headers.indexOf(COLUMN_NAMES.contactInfo),
                     vehicle: headers.indexOf(COLUMN_NAMES.vehicle),
-                    plate: headers.indexOf(COLUMN_NAMES.plate)
+                    plate: headers.indexOf(COLUMN_NAMES.plate),
+                    sighting: headers.indexOf(COLUMN_NAMES.sighting),
+                    lat: headers.indexOf(COLUMN_NAMES.lat),
+                    lon: headers.indexOf(COLUMN_NAMES.lon)
                 };
 
-                if (idx.lat === -1 || idx.lon === -1) {
-                    throw new Error(`Le colonne '${COLUMN_NAMES.lat}' o '${COLUMN_NAMES.lon}' non sono state trovate.`);
-                }
+                if (idx.lat === -1 || idx.lon === -1) throw new Error(`Colonne '${COLUMN_NAMES.lat}' o '${COLUMN_NAMES.lon}' non trovate.`);
 
                 rows.forEach(row => {
                     const lat = row.c[idx.lat] ? row.c[idx.lat].v : null;
@@ -156,17 +169,23 @@
                     if (typeof lat === 'number' && typeof lon === 'number') {
                         const org = {
                             name: (idx.name > -1 && row.c[idx.name]) ? row.c[idx.name].v : 'N/D',
-                            type: (idx.type > -1 && row.c[idx.type]) ? row.c[idx.type].v : 'N/D',
+                            municipality: (idx.municipality > -1 && row.c[idx.municipality]) ? row.c[idx.municipality].v : 'N/D',
                             contactPerson: (idx.contactPerson > -1 && row.c[idx.contactPerson]) ? row.c[idx.contactPerson].v : 'N/D',
                             contactInfo: (idx.contactInfo > -1 && row.c[idx.contactInfo]) ? row.c[idx.contactInfo].v : 'N/D',
                             vehicle: (idx.vehicle > -1 && row.c[idx.vehicle]) ? row.c[idx.vehicle].v : 'N/D',
                             plate: (idx.plate > -1 && row.c[idx.plate]) ? row.c[idx.plate].v : 'N/D',
+                            sighting: (idx.sighting > -1 && row.c[idx.sighting]) ? row.c[idx.sighting].v : '',
                             latlng: L.latLng(lat, lon)
                         };
                         organizations.push(org);
                         
-                        const popupContent = `<b>${org.name}</b><br>Referente: ${org.contactPerson}<br>Contatto: ${org.contactInfo}`;
-                        L.marker(org.latlng).addTo(map).bindPopup(popupContent);
+                        let markerIcon = blueIcon;
+                        if (org.sighting && org.sighting.toLowerCase() === 'si') {
+                            markerIcon = greenIcon;
+                        }
+                        
+                        const popupContent = `<b>${org.name}</b><br>Comune: ${org.municipality}<br>Referente: ${org.contactPerson}<br>Contatto: ${org.contactInfo}`;
+                        L.marker(org.latlng, {icon: markerIcon}).addTo(map).bindPopup(popupContent);
                     }
                 });
 
