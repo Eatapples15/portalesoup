@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mappa delle Organizzazioni</title>
+    <title>Portale Mappa Emergenze</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-omnivore/0.3.4/leaflet-omnivore.min.js"></script>
     
     <style>
@@ -19,38 +17,61 @@
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-        #results-panel {
+        #panel {
             position: absolute;
             top: 10px;
             right: 10px;
             z-index: 1000;
             background: white;
-            padding: 10px;
+            padding: 15px;
             border-radius: 5px;
             box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-            width: 300px;
-            max-height: 80%;
+            width: 320px;
+            max-height: 90%;
             overflow-y: auto;
         }
-        .result-item { padding: 5px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-        .result-item:last-child { border-bottom: none; }
+        #search-box {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        #search-button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        #search-button:hover { background-color: #0056b3; }
+        #results-content .result-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        #results-content .result-item:last-child { border-bottom: none; }
         h4 { margin-top: 0; }
+        #loader { display: none; text-align: center; padding: 10px; }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
     
-    <div id="results-panel">
+    <div id="panel">
+        <h4>Cerca Emergenza</h4>
+        <input type="text" id="search-box" placeholder="Indirizzo o Lat,Lon">
+        <button id="search-button" onclick="searchLocation()">Cerca</button>
+        
+        <hr>
+
         <h4>Squadre Più Vicine</h4>
-        <div id="results-content"><p style="font-size: 14px;">Clicca sulla mappa per segnalare un'emergenza e calcolare le distanze.</p></div>
+        <div id="loader">Ricerca in corso...</div>
+        <div id="results-content"><p style="font-size: 14px;">I risultati appariranno qui.</p></div>
     </div>
 
     <script>
-        // 1. Inizializza la mappa e la centra sulla Basilicata
-        const map = L.map('map').setView([40.5, 15.8], 9); // [latitudine, longitudine], zoom
-
-        // 2. Aggiunge il livello della mappa di base (da OpenStreetMap, che è gratuito)
+        const map = L.map('map').setView([40.5, 15.8], 9);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
@@ -58,53 +79,31 @@
         const organizations = [];
         let emergencyMarker;
 
-        // 3. Funzione per aggiornare il pannello dei risultati
         function updateResults(sortedOrgs) {
             const contentDiv = document.getElementById('results-content');
-            contentDiv.innerHTML = ''; // Pulisce i risultati precedenti
+            contentDiv.innerHTML = '';
             
-            // Mostra solo i primi 5 risultati
+            if (sortedOrgs.length === 0) {
+                contentDiv.innerHTML = '<p style="font-size: 14px;">Nessuna organizzazione trovata.</p>';
+                return;
+            }
+            
             sortedOrgs.slice(0, 5).forEach(org => {
                 const item = document.createElement('div');
                 item.className = 'result-item';
-                item.innerHTML = `<b>${org.name}</b><br>${(org.distance / 1000).toFixed(2)} km in linea d'aria`;
+                item.innerHTML = `<b>${org.name}</b><br>
+                                  <i>Tipo: ${org.type}</i><br>
+                                  Distanza: ${(org.distance / 1000).toFixed(2)} km`;
                 contentDiv.appendChild(item);
             });
         }
 
-        // 4. Carica e visualizza il file KML
-        const kmlLayer = omnivore.kml('mappa.kml').addTo(map);
-
-        // 5. Carica e visualizza i dati dal file CSV
-        const csvLayer = omnivore.csv('dati.csv')
-            .on('ready', function() {
-                this.eachLayer(function(layer) {
-                    const props = layer.feature.properties;
-                    const orgData = {
-                        name: props.organizzazione || 'Senza nome',
-                        latlng: layer.getLatLng(),
-                        layer: layer
-                    };
-                    organizations.push(orgData);
-
-                    // Aggiunge un popup più pulito
-                    const popupContent = `<b>${props.organizzazione || "Senza nome"}</b><br>Tipo: ${props.tipo || "Non specificato"}`;
-                    layer.bindPopup(popupContent);
-                });
-            })
-            .addTo(map);
-
-        // 6. Aggiungi listener per il click sulla mappa
-        map.on('click', function(e) {
-            const emergencyLatLng = e.latlng;
-
-            // Rimuovi il vecchio marker di emergenza se esiste
+        function processEmergency(latlng) {
             if (emergencyMarker) {
                 map.removeLayer(emergencyMarker);
             }
 
-            // Aggiungi un nuovo marker per l'emergenza (icona rossa)
-            emergencyMarker = L.marker(emergencyLatLng, { 
+            emergencyMarker = L.marker(latlng, { 
                 icon: L.icon({ 
                     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
                     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -112,17 +111,87 @@
                 })
             }).addTo(map).bindPopup("<b>EMERGENZA</b>").openPopup();
             
-            // Calcola le distanze di tutte le organizzazioni dal punto cliccato
+            map.panTo(latlng);
+
+            if (organizations.length === 0) {
+                document.getElementById('results-content').innerHTML = '<p style="font-size: 14px;">Dati delle organizzazioni non ancora caricati. Riprova tra poco.</p>';
+                return;
+            }
+            
             organizations.forEach(org => {
-                org.distance = emergencyLatLng.distanceTo(org.latlng); // Calcolo della distanza in metri
+                org.distance = latlng.distanceTo(org.latlng);
             });
 
-            // Ordina le organizzazioni per distanza, dalla più vicina alla più lontana
             const sortedOrgs = organizations.sort((a, b) => a.distance - b.distance);
-
-            // Aggiorna il pannello dei risultati sulla destra
             updateResults(sortedOrgs);
+        }
+
+        async function searchLocation() {
+            const query = document.getElementById('search-box').value;
+            if (!query) return;
+
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('results-content').innerHTML = '';
+
+            // Tenta di interpretare come coordinate
+            const coordRegex = /^[-\d.\s]+,[-\d.\s]+$/;
+            if (coordRegex.test(query)) {
+                const parts = query.split(',');
+                const lat = parseFloat(parts[0]);
+                const lon = parseFloat(parts[1]);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    document.getElementById('loader').style.display = 'none';
+                    processEmergency(L.latLng(lat, lon));
+                    return;
+                }
+            }
+
+            // Altrimenti, cerca come indirizzo usando Nominatim (il motore di OpenStreetMap)
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+
+            document.getElementById('loader').style.display = 'none';
+            if (data && data.length > 0) {
+                const bestResult = data[0];
+                const latlng = L.latLng(bestResult.lat, bestResult.lon);
+                processEmergency(latlng);
+            } else {
+                alert('Indirizzo non trovato.');
+            }
+        }
+
+        // Caricamento dati
+        omnivore.kml('mappa.kml').addTo(map);
+        omnivore.csv('dati.csv')
+            .on('ready', function() {
+                this.eachLayer(function(layer) {
+                    const props = layer.feature.properties;
+                    const orgData = {
+                        name: props.organizzazione || 'Senza nome',
+                        type: props.tipo || 'Non specificato',
+                        latlng: layer.getLatLng(),
+                        layer: layer
+                    };
+                    organizations.push(orgData);
+
+                    const popupContent = `<b>${orgData.name}</b><br>Tipo: ${orgData.type}`;
+                    layer.bindPopup(popupContent);
+                });
+                console.log(`${organizations.length} organizzazioni caricate.`);
+            })
+            .addTo(map);
+
+        map.on('click', function(e) {
+            processEmergency(e.latlng);
         });
+        
+        // Permette di usare il tasto Invio per la ricerca
+        document.getElementById('search-box').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                searchLocation();
+            }
+        });
+
     </script>
 
 </body>
