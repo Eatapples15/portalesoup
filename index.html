@@ -84,7 +84,6 @@
         const organizations = [];
         let emergencyMarker;
 
-        // Funzione per aggiornare il pannello dei risultati
         function updateResults(sortedOrgs) {
             const contentDiv = document.getElementById('results-content');
             contentDiv.innerHTML = '';
@@ -104,7 +103,6 @@
             });
         }
 
-        // Funzione per processare la ricerca o il click
         function processEmergency(latlng) {
             if (emergencyMarker) { map.removeLayer(emergencyMarker); }
 
@@ -128,13 +126,13 @@
             updateResults(sortedOrgs);
         }
 
-        // Funzione di ricerca
         async function searchLocation() {
             const query = document.getElementById('search-box').value;
             if (!query) return;
 
-            document.getElementById('status').style.display = 'block';
-            document.getElementById('status').innerHTML = '<p>Ricerca in corso...</p>';
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<p>Ricerca in corso...</p>';
             document.getElementById('results-content').innerHTML = '';
 
             const coordRegex = /^[-\d.\s]+,[-\d.\s]+$/;
@@ -148,19 +146,24 @@
                 }
             }
 
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=it`);
-            const data = await response.json();
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=it`);
+                const data = await response.json();
 
-            if (data && data.length > 0) {
-                processEmergency(L.latLng(data[0].lat, data[0].lon));
-            } else {
-                alert('Indirizzo non trovato.');
-                document.getElementById('status').style.display = 'none';
+                if (data && data.length > 0) {
+                    processEmergency(L.latLng(data[0].lat, data[0].lon));
+                } else {
+                    alert('Indirizzo non trovato.');
+                    statusDiv.style.display = 'none';
+                }
+            } catch (error) {
+                alert('Errore di rete durante la ricerca.');
+                statusDiv.style.display = 'none';
             }
         }
 
         // Caricamento dati
-        omnivore.kml('mappa.kml').on('error', () => console.log('Errore o file KML non trovato.')).addTo(map);
+        omnivore.kml('mappa.kml').on('error', () => console.log('Info: File KML non trovato o illeggibile. Verrà ignorato.')).addTo(map);
         omnivore.csv('dati.csv')
             .on('ready', function() {
                 this.eachLayer(function(layer) {
@@ -177,27 +180,24 @@
                     layer.bindPopup(popupContent);
                 });
                 
-                // **** LOGICA DI ABILITAZIONE ****
-                // Una volta che i dati sono pronti, abilita l'interfaccia
                 console.log(`${organizations.length} organizzazioni caricate.`);
                 document.getElementById('search-box').disabled = false;
                 document.getElementById('search-button').disabled = false;
                 document.getElementById('search-box').placeholder = "Indirizzo o Lat,Lon";
                 document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto. Clicca sulla mappa o usa la ricerca.</p>';
 
-                // Abilita il click sulla mappa solo ora
                 map.on('click', function(e) {
                     processEmergency(e.latlng);
                 });
             })
-            .on('error', function() {
-                document.getElementById('status').innerHTML = '<p style="color:red;">Errore caricamento dati CSV. Controlla il file e la console.</p>';
-            })
-            .addTo(map);
+            .on('error', function(e) {
+                console.error("Errore di parsing CSV:", e.error);
+                document.getElementById('status').innerHTML = '<p style="color:red;">Errore caricamento dati CSV. Controlla il file (formato, codifica UTF-8) e la console.</p>';
+            });
         
         document.getElementById('search-box').addEventListener('keyup', function(event) {
             if (event.key === 'Enter') {
-                searchLocation();
+                document.getElementById('search-button').click();
             }
         });
 
