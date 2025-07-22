@@ -7,75 +7,48 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-omnivore/0.3.4/leaflet-omnivore.min.js"></script>
     
     <style>
         html, body, #map {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-            padding: 0;
+            height: 100%; width: 100%; margin: 0; padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
         #panel {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-            width: 320px;
-            max-height: 90%;
-            overflow-y: auto;
+            position: absolute; top: 10px; right: 10px; z-index: 1000; background: white;
+            padding: 15px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            width: 320px; max-height: 90%; overflow-y: auto;
         }
-        #search-box {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 8px;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
+        #search-box { width: 100%; box-sizing: border-box; padding: 8px; font-size: 14px; margin-bottom: 5px; }
         #search-button {
-            width: 100%;
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-bottom: 15px;
-            transition: background-color 0.2s;
+            width: 100%; padding: 10px; background-color: #007bff; color: white; border: none;
+            border-radius: 4px; cursor: pointer; margin-bottom: 15px; transition: background-color 0.2s;
         }
         #search-button:hover { background-color: #0056b3; }
-        #search-button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
+        #search-button:disabled { background-color: #cccccc; cursor: not-allowed; }
         #results-content .result-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-        #results-content .result-item:last-child { border-bottom: none; }
         h4 { margin-top: 0; }
         #status { text-align: center; padding: 10px; color: #555; font-style: italic; }
     </style>
 </head>
 <body>
-
     <div id="map"></div>
-    
     <div id="panel">
         <h4>Cerca Emergenza</h4>
         <input type="text" id="search-box" placeholder="Caricamento dati..." disabled>
         <button id="search-button" onclick="searchLocation()" disabled>Cerca</button>
-        
         <hr>
-
         <h4>Squadre Più Vicine</h4>
-        <div id="status"><p>Caricamento dati organizzazioni...</p></div>
+        <div id="status"><p>Caricamento dati...</p></div>
         <div id="results-content"></div>
     </div>
 
     <script>
+        // --- CONFIGURAZIONE ---
+        const SHEET_ID = '1mNeb2ObFeD72o-WfNEzM4f2JfWl9iguqN4KGytpFS_Y';
+        // Assicurati che il nome della scheda in basso nel tuo foglio sia "Foglio1"
+        const SHEET_NAME = 'Foglio1'; 
+        // --------------------
+
         const map = L.map('map').setView([40.5, 15.8], 9);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -83,45 +56,30 @@
 
         const organizations = [];
         let emergencyMarker;
-
+        
         function updateResults(sortedOrgs) {
             const contentDiv = document.getElementById('results-content');
             contentDiv.innerHTML = '';
-            
-            if (sortedOrgs.length === 0) {
-                contentDiv.innerHTML = '<p style="font-size: 14px;">Nessuna organizzazione trovata.</p>';
-                return;
-            }
-            
             sortedOrgs.slice(0, 5).forEach(org => {
                 const item = document.createElement('div');
                 item.className = 'result-item';
-                item.innerHTML = `<b>${org.name}</b><br>
-                                  <i>Tipo: ${org.type}</i><br>
-                                  Distanza: ${(org.distance / 1000).toFixed(2)} km`;
+                item.innerHTML = `<b>${org.name}</b><br><i>Tipo: ${org.type}</i><br>Distanza: ${(org.distance / 1000).toFixed(2)} km`;
                 contentDiv.appendChild(item);
             });
         }
 
         function processEmergency(latlng) {
-            if (emergencyMarker) { map.removeLayer(emergencyMarker); }
-
+            if (emergencyMarker) map.removeLayer(emergencyMarker);
             emergencyMarker = L.marker(latlng, { 
                 icon: L.icon({ 
                     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
                     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                    iconSize: [25, 41], iconAnchor: [12, 41]
                 })
             }).addTo(map).bindPopup("<b>EMERGENZA</b>").openPopup();
-            
             map.panTo(latlng);
-            
-            organizations.forEach(org => {
-                org.distance = latlng.distanceTo(org.latlng);
-            });
-
+            organizations.forEach(org => org.distance = latlng.distanceTo(org.latlng));
             const sortedOrgs = organizations.sort((a, b) => a.distance - b.distance);
-            
             document.getElementById('status').style.display = 'none';
             updateResults(sortedOrgs);
         }
@@ -129,92 +87,76 @@
         async function searchLocation() {
             const query = document.getElementById('search-box').value;
             if (!query) return;
-
             const statusDiv = document.getElementById('status');
             statusDiv.style.display = 'block';
             statusDiv.innerHTML = '<p>Ricerca in corso...</p>';
-            document.getElementById('results-content').innerHTML = '';
-
             const coordRegex = /^[-\d.\s]+,[-\d.\s]+$/;
             if (coordRegex.test(query)) {
-                const parts = query.split(',');
-                const lat = parseFloat(parts[0]);
-                const lon = parseFloat(parts[1]);
-                if (!isNaN(lat) && !isNaN(lon)) {
-                    processEmergency(L.latLng(lat, lon));
-                    return;
-                }
+                const [lat, lon] = query.split(',').map(parseFloat);
+                if (!isNaN(lat) && !isNaN(lon)) return processEmergency(L.latLng(lat, lon));
             }
-
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=it`);
                 const data = await response.json();
-
-                if (data && data.length > 0) {
-                    processEmergency(L.latLng(data[0].lat, data[0].lon));
-                } else {
+                if (data && data.length > 0) processEmergency(L.latLng(data[0].lat, data[0].lon));
+                else {
                     alert('Indirizzo non trovato.');
                     statusDiv.style.display = 'none';
                 }
             } catch (error) {
-                alert('Errore di rete durante la ricerca.');
+                alert('Errore di rete.');
                 statusDiv.style.display = 'none';
             }
         }
+        
+        const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
 
-        // Caricamento dati
-        omnivore.kml('mappa.kml').on('error', () => console.log('Info: File KML non trovato o illeggibile. Verrà ignorato.')).addTo(map);
-        omnivore.csv('dati.csv')
-            .on('ready', function() {
-                this.eachLayer(function(layer) {
-                    const props = layer.feature.properties;
-                    
-                    // **** NUOVO CONTROLLO PIÙ ROBUSTO ****
-                    // Converte lat e lon in numeri e controlla se sono validi.
-                    const lat = parseFloat(props.lat);
-                    const lon = parseFloat(props.lon);
+        fetch(sheetUrl)
+            .then(response => response.text())
+            .then(text => {
+                const json = JSON.parse(text.substring(47).slice(0, -2));
+                const headers = json.table.cols.map(col => col.label);
+                const rows = json.table.rows;
+                
+                const idxLat = headers.indexOf('lat');
+                const idxLon = headers.indexOf('lon');
+                const idxName = headers.indexOf('organizzazione');
+                const idxType = headers.indexOf('tipo');
 
-                    if (!isNaN(lat) && !isNaN(lon)) {
-                        // Se le coordinate sono numeri validi, processa la riga.
-                        const orgData = {
-                            name: props.organizzazione || 'Senza nome',
-                            type: props.tipo || 'Non specificato',
-                            latlng: L.latLng(lat, lon), // Usa le coordinate verificate
-                            layer: layer
+                if (idxLat === -1 || idxLon === -1) {
+                    throw new Error("Le colonne 'lat' o 'lon' non sono state trovate. Controlla le intestazioni nel Foglio Google.");
+                }
+
+                rows.forEach(row => {
+                    const lat = row.c[idxLat] ? row.c[idxLat].v : null;
+                    const lon = row.c[idxLon] ? row.c[idxLon].v : null;
+
+                    if (typeof lat === 'number' && typeof lon === 'number') {
+                        const org = {
+                            name: row.c[idxName] ? row.c[idxName].v : 'Senza nome',
+                            type: row.c[idxType] ? row.c[idxType].v : 'Non specificato',
+                            latlng: L.latLng(lat, lon)
                         };
-                        organizations.push(orgData);
-
-                        const popupContent = `<b>${orgData.name}</b><br>Tipo: ${orgData.type}`;
-                        layer.bindPopup(popupContent);
-                    } else {
-                        // Altrimenti, ignora la riga e vai alla successiva.
-                        console.log('Riga saltata (coordinate mancanti o non valide):', props);
+                        organizations.push(org);
+                        L.marker(org.latlng).addTo(map).bindPopup(`<b>${org.name}</b><br>Tipo: ${org.type}`);
                     }
                 });
-                
-                // **** LOGICA DI ABILITAZIONE ****
-                console.log(`${organizations.length} organizzazioni caricate sulla mappa.`);
+
+                console.log(`${organizations.length} organizzazioni caricate.`);
                 document.getElementById('search-box').disabled = false;
                 document.getElementById('search-button').disabled = false;
                 document.getElementById('search-box').placeholder = "Indirizzo o Lat,Lon";
-                document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto. Clicca sulla mappa o usa la ricerca.</p>';
-
-                map.on('click', function(e) {
-                    processEmergency(e.latlng);
-                });
+                document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto.</p>';
+                map.on('click', e => processEmergency(e.latlng));
             })
-            .on('error', function(e) {
-                console.error("Errore di parsing CSV:", e.error);
-                document.getElementById('status').innerHTML = '<p style="color:red;">Errore caricamento dati CSV. Controlla il file (formato, codifica UTF-8) e la console.</p>';
+            .catch(error => {
+                console.error('Errore nel caricamento dei dati:', error);
+                document.getElementById('status').innerHTML = '<p style="color:red;">Errore caricamento dati. Controlla l\'ID del foglio, il nome del foglio e che le impostazioni di condivisione siano su "Chiunque abbia il link".</p>';
             });
-        
-        document.getElementById('search-box').addEventListener('keyup', function(event) {
-            if (event.key === 'Enter') {
-                document.getElementById('search-button').click();
-            }
+
+        document.getElementById('search-box').addEventListener('keyup', e => {
+            if (e.key === 'Enter') document.getElementById('search-button').click();
         });
-
     </script>
-
 </body>
 </html>
