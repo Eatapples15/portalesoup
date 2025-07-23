@@ -12,60 +12,68 @@
         html, body {
             height: 100%; width: 100%; margin: 0; padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
+            overflow: hidden; background-color: #f0f0f0;
         }
 
         /* BANNER */
         #app-header {
             position: absolute; top: 0; left: 0; width: 100%; z-index: 1001;
-            background-color: #ffffff; color: #333; padding: 10px 20px;
+            background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(245,245,245,1) 100%);
+            color: #333; padding: 10px 20px;
             display: flex; align-items: center; justify-content: space-between;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2); box-sizing: border-box;
+            border-bottom: 1px solid #ddd;
         }
         .header-logo img { height: 50px; }
         .header-title { text-align: center; flex-grow: 1; margin: 0 20px; }
-        .header-title h1 { font-size: 1.5em; margin: 0; }
+        .header-title h1 { font-size: 1.6em; margin: 0; font-weight: 600; }
         .header-title p { font-size: 0.8em; margin: 0; color: #666; }
         .header-nav .nav-button {
-            padding: 10px 15px; margin-left: 5px; background-color: #f0f0f0; color: #333;
-            text-decoration: none; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;
-            cursor: pointer; transition: background-color 0.2s; white-space: nowrap;
+            padding: 10px 15px; margin-left: 5px; background-color: #e9ecef; color: #333;
+            text-decoration: none; border: 1px solid #ccc; border-radius: 5px; font-size: 14px;
+            cursor: pointer; transition: all 0.2s; font-weight: 500;
         }
-        .header-nav .nav-button:hover { background-color: #e0e0e0; }
+        .header-nav .nav-button:hover { background-color: #dee2e6; border-color: #aaa; }
         .nav-button.reset-button { background-color: #ffc107; font-weight: bold; }
 
         #map { height: 100%; width: 100%; }
-        .leaflet-top.leaflet-left { top: 80px; } /* Sposta i controlli zoom */
-        .leaflet-top.leaflet-right { top: 80px; } /* Sposta il controllo livelli */
-
-        /* PANNELLO LATERALE */
+        .leaflet-top { top: 85px; } /* Sposta i controlli sotto il banner */
+        
+        /* PANNELLI stile Dashboard */
+        .dashboard-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
         #panel {
-            position: absolute; top: 80px; right: 10px; z-index: 1000; background: white;
-            padding: 15px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-            width: 380px; max-height: calc(100% - 90px); overflow-y: auto;
+            position: absolute; top: 85px; right: 10px; z-index: 1000;
+            padding: 15px; width: 380px; max-height: calc(100% - 100px); overflow-y: auto;
         }
-        #results-content .result-item { padding: 8px; border-bottom: 1px solid #eee; font-size: 14px; line-height: 1.5; cursor: pointer; }
-        #results-content .result-item:hover { background-color: #f0f8ff; }
-
-        /* BOX STATISTICHE */
         #stats-box {
-            position: absolute; bottom: 10px; left: 10px; z-index: 1000; background: rgba(255, 255, 255, 0.85);
-            padding: 10px 15px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-            backdrop-filter: blur(5px);
+            position: absolute; bottom: 10px; left: 10px; z-index: 1000;
+            padding: 10px 15px;
         }
-        #stats-box h4 { margin: 0 0 5px 0; }
-        #stats-box p { margin: 3px 0; font-size: 14px; }
+        #stats-box h4 { margin: 0 0 8px 0; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
+        #stats-box p { margin: 4px 0; font-size: 14px; }
+
+        /* RISULTATI e STATI */
+        #results-content .result-item { padding: 8px; border: 2px solid transparent; border-bottom: 1px solid #eee; font-size: 14px; line-height: 1.5; cursor: pointer; }
+        #results-content .result-item:hover { background-color: #f0f8ff; }
+        .recommended { animation: flashing-border 1.5s infinite; }
+        @keyframes flashing-border { 0%, 100% { border-color: #28a745; } 50% { border-color: transparent; } }
+        .assigned { border: 2px solid #0d6efd; background-color: #e7f1ff; }
+        .marker-unavailable { filter: grayscale(100%) opacity(0.5); }
+        .leaflet-control-layers { border-radius: 8px !important; }
 
         /* MODALE */
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background-color: #fefefe; margin: auto; padding: 25px; border: 1px solid #888; border-radius: 8px; width: 90%; max-width: 600px; position: relative; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 600px; position: relative; }
         .modal-close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         #modal-actions button { width: 100%; padding: 12px; font-size: 16px; margin-top: 15px; border-radius: 4px; border: none; color: white; cursor: pointer; }
         #assign-button { background-color: #28a745; }
         #release-button { background-color: #dc3545; }
-        
-        /* STATI VISIVI */
-        .marker-unavailable { filter: grayscale(100%) opacity(0.5); }
     </style>
 </head>
 <body>
@@ -78,14 +86,13 @@
         </div>
         <nav class="header-nav">
             <a href="https://www.formazionesicurezza.org/protezionecivile/acqua/" target="_blank" class="nav-button">Risorse Idriche</a>
-            <a href="https://macnil.gtfleet.net/" target="_blank" class="nav-button">GPS ODV</a>
-            <a href="https://gtalarm.net/" target="_blank" class="nav-button">GPS CDB</a>
             <button class="nav-button reset-button" onclick="resetState()">Reset Stato</button>
         </nav>
     </header>
 
     <div id="map"></div>
-    <div id="panel">
+
+    <div id="panel" class="dashboard-panel">
         <h4>Cerca Emergenza</h4>
         <input type="text" id="search-box" placeholder="Caricamento dati..." disabled>
         <button id="search-button" onclick="searchLocation()" disabled>Cerca</button>
@@ -95,10 +102,10 @@
         <div id="results-content"></div>
     </div>
     
-    <div id="stats-box">
+    <div id="stats-box" class="dashboard-panel">
         <h4>Stato Risorse</h4>
-        <p><strong>Associazioni:</strong> <span id="odv-stats">0 / 0</span> (Impegnate / Totali)</p>
-        <p><strong>CDB:</strong> <span id="cdb-stats">0 / 0</span> (Impegnati / Totali)</p>
+        <p><strong>Associazioni:</strong> <span id="odv-stats">0 / 0</span> (Imp. / Tot.)</p>
+        <p><strong>CDB:</strong> <span id="cdb-stats">0 / 0</span> (Imp. / Tot.)</p>
         <p><strong>Eventi Attivi:</strong> <span id="events-stats">0</span></p>
     </div>
 
@@ -135,6 +142,7 @@
         const layerGroups = {
             firefighting: L.layerGroup().addTo(map), sighting: L.layerGroup().addTo(map),
             cdb: L.layerGroup().addTo(map), region: L.layerGroup().addTo(map),
+            municipality: L.layerGroup(), // Non aggiunto di default
             events: L.layerGroup().addTo(map)
         };
 
@@ -146,22 +154,25 @@
         const modal = document.getElementById('detail-modal');
         
         function updateCounters() {
-            const totalODV = organizations.filter(org => org.name.toUpperCase() !== 'CDB').length;
-            const assignedODV = organizations.filter(org => org.name.toUpperCase() !== 'CDB' && org.isAssigned).length;
-            const totalCDB = organizations.filter(org => org.name.toUpperCase() === 'CDB').length;
-            const assignedCDB = organizations.filter(org => org.name.toUpperCase() === 'CDB' && org.isAssigned).length;
+            const totalODV = organizations.filter(org => org.type !== 'CDB').length;
+            const assignedODV = organizations.filter(org => org.type !== 'CDB' && org.isAssigned).length;
+            const totalCDB = organizations.filter(org => org.type === 'CDB').length;
+            const assignedCDB = organizations.filter(org => org.type === 'CDB' && org.isAssigned).length;
             
             document.getElementById('odv-stats').innerText = `${assignedODV} / ${totalODV}`;
             document.getElementById('cdb-stats').innerText = `${assignedCDB} / ${totalCDB}`;
             document.getElementById('events-stats').innerText = activeEvents.length;
         }
 
-        function updateResults(sortedOrgs) {
+        function updateResults(sortedOrgs, recommendedName) {
             const contentDiv = document.getElementById('results-content');
             contentDiv.innerHTML = '';
             sortedOrgs.slice(0, NUMBER_OF_RESULTS).forEach(org => {
                 const item = document.createElement('div');
                 item.className = 'result-item';
+                if (org.name === recommendedName) {
+                    item.classList.add('recommended');
+                }
                 item.innerHTML = `<b>${org.name}</b> (${org.municipality})<br><i>Distanza: ${(org.distance / 1000).toFixed(2)} km</i>`;
                 item.onclick = () => showModal(org);
                 contentDiv.appendChild(item);
@@ -176,7 +187,7 @@
 
             const statusSpan = document.getElementById('modal-stato');
             const actionsDiv = document.getElementById('modal-actions');
-            actionsDiv.innerHTML = '';
+actionsDiv.innerHTML = '';
 
             if (org.isAssigned) {
                 const event = activeEvents.find(e => e.assignedTeam && e.assignedTeam.name === org.name);
@@ -205,7 +216,7 @@
         window.onclick = function(event) { if (event.target == modal) hideModal(); }
 
         function assignTeam(org) {
-            const sigerId = prompt("Inserisci l'ID SIGER di riferimento per l'evento (facoltativo):", "");
+            const sigerId = prompt("Inserisci l'ID SIGER di riferimento (facoltativo):", "");
             if (sigerId === null) return;
             
             org.isAssigned = true;
@@ -217,10 +228,11 @@
             
             hideModal();
             updateCounters();
-            // Aggiorna la lista per non mostrare più la squadra appena assegnata
+            
             const availableOrgs = organizations.filter(o => !o.isAssigned);
             availableOrgs.forEach(o => o.distance = currentEventForAssignment.latlng.distanceTo(o.latlng));
-            updateResults(availableOrgs.sort((a, b) => a.distance - b.distance));
+            const sortedOrgs = availableOrgs.sort((a, b) => a.distance - b.distance);
+            updateResults(sortedOrgs, null); // Rimuovi la raccomandazione dopo l'assegnazione
         }
 
         function releaseTeam(org) {
@@ -245,8 +257,16 @@
             availableOrgs.forEach(org => org.distance = latlng.distanceTo(org.latlng));
             const sortedOrgs = availableOrgs.sort((a, b) => a.distance - b.distance);
             
+            let recommendedName = null;
+            const recommendedCDB = sortedOrgs.find(org => org.type === 'CDB');
+            if (recommendedCDB) {
+                recommendedName = recommendedCDB.name;
+            } else if (sortedOrgs.length > 0) {
+                recommendedName = sortedOrgs[0].name;
+            }
+
             document.getElementById('status').style.display = 'none';
-            updateResults(sortedOrgs);
+            updateResults(sortedOrgs, recommendedName);
             updateCounters();
         }
         
@@ -275,11 +295,11 @@
             } catch (error) { alert('Errore di rete.'); }
         }
 
-        // --- Inizializzazione e Caricamento Dati ---
         Promise.all([
             fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`).then(res => res.text()),
-            fetch('https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson').then(res => res.json())
-        ]).then(([sheetText, regionData]) => {
+            fetch('https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson').then(res => res.json()),
+            fetch('https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_municipalities.geojson').then(res => res.json())
+        ]).then(([sheetText, regionData, municipalityData]) => {
             const json = JSON.parse(sheetText.substring(47).slice(0, -2));
             const headers = json.table.cols.map(col => col.label.toLowerCase().trim());
             const rows = json.table.rows;
@@ -288,22 +308,23 @@
                 contactPerson: headers.indexOf(COLUMN_NAMES.contactPerson), contactInfo: headers.indexOf(COLUMN_NAMES.contactInfo),
                 sighting: headers.indexOf(COLUMN_NAMES.sighting), lat: headers.indexOf(COLUMN_NAMES.lat), lon: headers.indexOf(COLUMN_NAMES.lon)
             };
-            if (idx.lat === -1 || idx.lon === -1) throw new Error(`Colonne '${COLUMN_NAMES.lat}' o '${COLUMN_NAMES.lon}' non trovate.`);
             rows.forEach(row => {
                 const lat = row.c[idx.lat] ? row.c[idx.lat].v : null;
                 const lon = row.c[idx.lon] ? row.c[idx.lon].v : null;
                 if (typeof lat === 'number' && typeof lon === 'number') {
+                    const orgName = (idx.name > -1 && row.c[idx.name]) ? row.c[idx.name].v : 'N/D';
                     const org = {
-                        name: (idx.name > -1 && row.c[idx.name]) ? row.c[idx.name].v : 'N/D',
+                        name: orgName,
                         municipality: (idx.municipality > -1 && row.c[idx.municipality]) ? row.c[idx.municipality].v : 'N/D',
                         contactPerson: (idx.contactPerson > -1 && row.c[idx.contactPerson]) ? row.c[idx.contactPerson].v : 'N/D',
                         contactInfo: (idx.contactInfo > -1 && row.c[idx.contactInfo]) ? row.c[idx.contactInfo].v : 'N/D',
                         sighting: (idx.sighting > -1 && row.c[idx.sighting]) ? row.c[idx.sighting].v : '',
                         latlng: L.latLng(lat, lon),
-                        isAssigned: false
+                        isAssigned: false,
+                        type: orgName.toUpperCase() === 'CDB' ? 'CDB' : 'ODV'
                     };
                     let markerIcon, targetLayer;
-                    if (org.name.toUpperCase() === 'CDB') {
+                    if (org.type === 'CDB') {
                         markerIcon = cdbIcon; targetLayer = layerGroups.cdb;
                     } else if (org.sighting.toLowerCase() === 'si') {
                         markerIcon = sightingIcon; targetLayer = layerGroups.sighting;
@@ -315,15 +336,17 @@
                 }
             });
             
-            const regionGeoJsonLayer = L.geoJson(regionData, { style: {"color": "#0d6efd", "weight": 3, "opacity": 0.8, "fillOpacity": 0.05}, filter: (f) => f.properties.reg_istat_code_num === 17 }).addTo(layerGroups.region);
+            const regionGeoJsonLayer = L.geoJson(regionData, { style: {"color": "#0d6efd", "weight": 2.5, "opacity": 0.7, "fillOpacity": 0.1}, filter: (f) => f.properties.reg_istat_code_num === 17 }).addTo(layerGroups.region);
             regionBounds = regionGeoJsonLayer.getBounds();
             map.fitBounds(regionBounds);
             
+            L.geoJson(municipalityData, { style: {"color": "#6c757d", "weight": 1, "opacity": 0.5, "fillOpacity": 0.05}, filter: (f) => f.properties.reg_istat_code_num === 17 }).addTo(layerGroups.municipality);
+            
             L.control.layers(null, {
-                "Confine Regionale": layerGroups.region,
+                "Confine Regionale": layerGroups.region, "Confini Comunali": layerGroups.municipality,
                 "Squadre Operative": layerGroups.firefighting, "Squadre Avvistamento": layerGroups.sighting,
                 "Consorzi di Bonifica": layerGroups.cdb, "Eventi": layerGroups.events
-            }, { collapsed: false }).addTo(map);
+            }, { position: 'topright', collapsed: true }).addTo(map);
 
             updateCounters();
             document.getElementById('search-box').disabled = false;
