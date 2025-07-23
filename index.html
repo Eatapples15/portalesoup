@@ -178,6 +178,11 @@
             document.getElementById('results-title').innerText = 'Squadre Più Vicine';
             document.getElementById('status').style.display = 'none';
 
+            if (sortedOrgs.length === 0) {
+                 contentDiv.innerHTML = '<p>Nessuna squadra disponibile trovata.</p>';
+                 return;
+            }
+
             sortedOrgs.slice(0, NUMBER_OF_RESULTS).forEach(org => {
                 const item = document.createElement('div');
                 item.className = 'result-item';
@@ -247,6 +252,10 @@
                 layerGroups.events.removeLayer(eventMarker);
             }
 
+            document.getElementById('status').innerHTML = '<p>Calcolo distanze...</p>';
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('results-content').innerHTML = '';
+
             const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`);
             const data = await response.json();
             let locationName = "Posizione Sconosciuta";
@@ -292,6 +301,11 @@
         async function searchLocation() {
             const query = document.getElementById('search-box').value;
             if (!query) return;
+
+            document.getElementById('status').innerHTML = '<p>Ricerca località in corso...</p>';
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('results-content').innerHTML = '';
+            
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=it`);
                 const data = await response.json();
@@ -299,8 +313,12 @@
                     processEmergency(L.latLng(data[0].lat, data[0].lon));
                 } else {
                     alert('Indirizzo non trovato.');
+                    document.getElementById('status').style.display = 'none';
                 }
-            } catch (error) { alert('Errore di rete.'); }
+            } catch (error) { 
+                alert('Errore di rete.');
+                document.getElementById('status').style.display = 'none';
+            }
         }
 
         // --- CARICAMENTO DATI INIZIALE ---
@@ -317,6 +335,7 @@
             const headers = json.table.cols.map(col => col.label.toLowerCase().trim());
             const rows = json.table.rows;
             const idx = { name: headers.indexOf(COLUMN_NAMES.name), municipality: headers.indexOf(COLUMN_NAMES.municipality), contactPerson: headers.indexOf(COLUMN_NAMES.contactPerson), contactInfo: headers.indexOf(COLUMN_NAMES.contactInfo), sighting: headers.indexOf(COLUMN_NAMES.sighting), lat: headers.indexOf(COLUMN_NAMES.lat), lon: headers.indexOf(COLUMN_NAMES.lon) };
+            
             rows.forEach((row, i) => {
                 const lat = row.c[idx.lat] ? row.c[idx.lat].v : null;
                 const lon = row.c[idx.lon] ? row.c[idx.lon].v : null;
