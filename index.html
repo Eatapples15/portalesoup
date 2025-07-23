@@ -176,6 +176,8 @@
             const contentDiv = document.getElementById('results-content');
             contentDiv.innerHTML = '';
             document.getElementById('results-title').innerText = 'Squadre Più Vicine';
+            document.getElementById('status').style.display = 'none';
+
             sortedOrgs.slice(0, NUMBER_OF_RESULTS).forEach(org => {
                 const item = document.createElement('div');
                 item.className = 'result-item';
@@ -198,7 +200,7 @@
             actionsDiv.innerHTML = '';
 
             if (org.isAssigned) {
-                statusSpan.innerHTML = `<span style="color:red; font-weight:bold;">IMPEGNATA</span> (ID Evento: ${org.assignedSigerId})`;
+                statusSpan.innerHTML = `<span style="color:red; font-weight:bold;">IMPEGNATA</span> (ID Missione: ${org.assignedSigerId})`;
                 const releaseButton = document.createElement('button');
                 releaseButton.id = 'release-button';
                 releaseButton.innerText = 'Sgancia Squadra';
@@ -222,7 +224,7 @@
 
         function assignTeam(org) {
             const sigerId = prompt("Inserisci l'ID SIGER per questa missione:", "");
-            if (sigerId === null) return; // L'utente ha premuto Annulla
+            if (sigerId === null) return;
             
             org.isAssigned = true;
             org.assignedSigerId = sigerId || 'N/D';
@@ -241,7 +243,6 @@
         }
         
         async function processEmergency(latlng) {
-            // Rimuove l'evento precedente per mantenere un solo evento attivo alla volta
             if (eventMarker) {
                 layerGroups.events.removeLayer(eventMarker);
             }
@@ -268,7 +269,6 @@
                 recommendedName = sortedOrgs[0].name;
             }
 
-            document.getElementById('status').style.display = 'none';
             updateResults(sortedOrgs, recommendedName);
             updateCounters();
         }
@@ -277,7 +277,9 @@
             organizations.forEach(org => {
                 org.isAssigned = false;
                 org.assignedSigerId = null;
-                if (org.marker.getElement()) org.marker.getElement().classList.remove('marker-unavailable');
+                if (org.marker.getElement()) {
+                    org.marker.getElement().classList.remove('marker-unavailable');
+                }
             });
             layerGroups.events.clearLayers();
             eventMarker = null;
@@ -357,7 +359,7 @@
             document.getElementById('search-box').disabled = false;
             document.getElementById('search-button').disabled = false;
             document.getElementById('search-box').placeholder = "Indirizzo o Lat,Lon";
-            document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto.</p>';
+            document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto. Clicca sulla mappa o cerca una località.</p>';
             
             map.on('click', e => {
                 if (regionBounds && !regionBounds.contains(e.latlng)) { return; }
