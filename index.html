@@ -138,6 +138,7 @@
         // --- VARIABILI DI STATO ---
         const organizations = [];
         let regionBounds = null;
+        let eventMarker = null;
 
         // --- ELEMENTI DOM E MAPPA ---
         const map = L.map('map', { zoomControl: false });
@@ -159,7 +160,7 @@
         };
         
         // --- FUNZIONI DI GESTIONE UI ---
-
+        
         function updateCounters() {
             const totalODV = organizations.filter(org => org.type !== 'CDB').length;
             const assignedODV = organizations.filter(org => org.type !== 'CDB' && org.isAssigned).length;
@@ -239,8 +240,20 @@
             updateCounters();
         }
         
-        function processEmergency(latlng) {
-            const eventMarker = L.marker(latlng, { icon: flameIcon }).addTo(layerGroups.events).bindPopup('<b>Evento</b>').openPopup();
+        async function processEmergency(latlng) {
+            // Rimuove l'evento precedente per mantenere un solo evento attivo alla volta
+            if (eventMarker) {
+                layerGroups.events.removeLayer(eventMarker);
+            }
+
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`);
+            const data = await response.json();
+            let locationName = "Posizione Sconosciuta";
+            if(data && data.display_name) {
+                locationName = data.display_name.split(',').slice(0, 3).join(',');
+            }
+            eventMarker = L.marker(latlng, { icon: flameIcon }).addTo(layerGroups.events).bindPopup(`<b>Evento</b><br>${locationName}`).openPopup();
+            
             map.panTo(latlng);
             
             const availableOrgs = organizations.filter(org => !org.isAssigned);
@@ -254,7 +267,7 @@
             } else if (sortedOrgs.length > 0) {
                 recommendedName = sortedOrgs[0].name;
             }
-            
+
             document.getElementById('status').style.display = 'none';
             updateResults(sortedOrgs, recommendedName);
             updateCounters();
@@ -267,8 +280,9 @@
                 if (org.marker.getElement()) org.marker.getElement().classList.remove('marker-unavailable');
             });
             layerGroups.events.clearLayers();
+            eventMarker = null;
             document.getElementById('results-content').innerHTML = '';
-            document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto. Clicca sulla mappa per creare un evento.</p>';
+            document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto. Clicca sulla mappa o cerca per creare un evento.</p>';
             document.getElementById('status').style.display = 'block';
             updateCounters();
         }
@@ -301,7 +315,6 @@
             const headers = json.table.cols.map(col => col.label.toLowerCase().trim());
             const rows = json.table.rows;
             const idx = { name: headers.indexOf(COLUMN_NAMES.name), municipality: headers.indexOf(COLUMN_NAMES.municipality), contactPerson: headers.indexOf(COLUMN_NAMES.contactPerson), contactInfo: headers.indexOf(COLUMN_NAMES.contactInfo), sighting: headers.indexOf(COLUMN_NAMES.sighting), lat: headers.indexOf(COLUMN_NAMES.lat), lon: headers.indexOf(COLUMN_NAMES.lon) };
-            
             rows.forEach((row, i) => {
                 const lat = row.c[idx.lat] ? row.c[idx.lat].v : null;
                 const lon = row.c[idx.lon] ? row.c[idx.lon].v : null;
@@ -344,7 +357,7 @@
             document.getElementById('search-box').disabled = false;
             document.getElementById('search-button').disabled = false;
             document.getElementById('search-box').placeholder = "Indirizzo o Lat,Lon";
-            document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto. Clicca sulla mappa o cerca una località.</p>';
+            document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto.</p>';
             
             map.on('click', e => {
                 if (regionBounds && !regionBounds.contains(e.latlng)) { return; }
