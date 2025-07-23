@@ -75,7 +75,6 @@
         .recommended { animation: flashing-border 1.5s infinite; }
         @keyframes flashing-border { 0%, 100% { border-color: #28a745; } 50% { border-color: transparent; } }
         .marker-unavailable { filter: grayscale(100%) opacity: 0.5; }
-        .marker-selected { transform: scale(1.5); z-index: 10000 !important; }
         
         /* MODALE */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
@@ -145,25 +144,15 @@
     </div>
 
     <script>
-        // --- CONFIGURAZIONE ---
+        // --- CONFIGURAZIONE E VARIABILI GLOBALI ---
         const SHEET_ID = '1mNeb2ObFeD72o-WfNEzM4f2JfWl9iguqN4KGytpFS_Y';
         const SHEET_NAME = 'Foglio1'; 
         const NUMBER_OF_RESULTS = 10;
         const COLUMN_NAMES = { name: 'associazione', municipality: 'comune', contactPerson: 'referente', contactInfo: 'telefono', sighting: 'avvistamento', lat: 'lat', lon: 'lon' };
 
-        // --- VARIABILI DI STATO GLOBALI ---
-        const organizations = [];
-        let activeEvents = [];
-        let selectedEvent = null;
-        let regionBounds = null;
-        let tempEventMarker = null;
-
-        // --- ELEMENTI DOM ---
         const map = L.map('map', { zoomControl: false });
-        const modal = document.getElementById('detail-modal');
-
-        // --- SETUP MAPPA E ICONE ---
         L.control.zoom({ position: 'topleft' }).addTo(map);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
         
         const firefightingIcon = L.icon({ iconUrl: 'https://img.icons8.com/plasticine/100/fire-extinguisher.png', iconSize: [38, 38], iconAnchor: [19, 38] });
@@ -177,7 +166,15 @@
             municipality: L.layerGroup(), events: L.layerGroup().addTo(map)
         };
 
-        // --- FUNZIONI DI AGGIORNAMENTO UI ---
+        const organizations = [];
+        let activeEvents = [];
+        let selectedEvent = null;
+        let regionBounds = null;
+        let tempEventMarker = null;
+        
+        const modal = document.getElementById('detail-modal');
+        
+        // --- FUNZIONI DI GESTIONE STATO E UI ---
         
         function updateCounters() {
             const totalODV = organizations.filter(org => org.type !== 'CDB').length;
@@ -211,9 +208,15 @@
             });
         }
 
-        function updateResults(sortedOrgs, recommendedName) {
+        function showNearestTeams(event, recommendedName) {
+            document.getElementById('results-title').innerText = `Squadre vicine a evento ${event.sigerId || '(nuovo)'}`;
             const contentDiv = document.getElementById('results-content');
             contentDiv.innerHTML = '';
+            
+            const availableOrgs = organizations.filter(org => org.assignedToEventId === null);
+            availableOrgs.forEach(org => org.distance = event.latlng.distanceTo(org.latlng));
+            const sortedOrgs = availableOrgs.sort((a, b) => a.distance - b.distance);
+
             sortedOrgs.slice(0, NUMBER_OF_RESULTS).forEach(org => {
                 const item = document.createElement('div');
                 item.className = 'result-item';
@@ -225,6 +228,27 @@
                 contentDiv.appendChild(item);
             });
         }
+        
+        function showAssignedTeams(event) {
+            document.getElementById('results-title').innerHTML = `Squadre assegnate a evento ${event.sigerId || ''}`;
+            const contentDiv = document.getElementById('results-content');
+            contentDiv.innerHTML = '';
+            if(event.assignedTeams.length === 0) {
+                contentDiv.innerHTML = "<p>Nessuna squadra assegnata a questo evento.</p>";
+            }
+            event.assignedTeams.forEach(org => {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.innerHTML = `<b>${org.name}</b> (${org.municipality}) <button onclick="releaseTeam(${org.id}, ${event.id})" style="float:right;color:red;font-weight:bold;">Sgancia</button>`;
+                contentDiv.appendChild(item);
+            });
+            const addButton = document.createElement('button');
+            addButton.innerText = 'Aggiungi Altra Squadra';
+            addButton.style.width = '100%';
+            addButton.style.marginTop = '10px';
+            addButton.onclick = () => showNearestTeams(event);
+            contentDiv.appendChild(addButton);
+        }
 
         function showModal(org) {
             document.getElementById('modal-title').innerText = org.name;
@@ -234,13 +258,14 @@
             const statusSpan = document.getElementById('modal-stato');
             const actionsDiv = document.getElementById('modal-actions');
             actionsDiv.innerHTML = '';
+
             if (org.assignedToEventId) {
                 const event = activeEvents.find(e => e.id === org.assignedToEventId);
-                statusSpan.innerHTML = `<span style="color:red; font-weight:bold;">IMPEGNATA</span> (ID Evento: ${event ? event.sigerId : '...'})`;
+                statusSpan.innerHTML = `<span style="color:red; font-weight:bold;">IMPEGNATA</span> (ID Evento: ${event ? event.sigerId : 'Sconosciuto'})`;
                 const releaseButton = document.createElement('button');
                 releaseButton.id = 'release-button';
                 releaseButton.innerText = 'Sgancia Squadra';
-                releaseButton.onclick = () => releaseTeam(org.id);
+                releaseButton.onclick = () => releaseTeam(org.id, event.id);
                 actionsDiv.appendChild(releaseButton);
             } else {
                 statusSpan.innerHTML = `<span style="color:green; font-weight:bold;">LIBERA</span>`;
@@ -259,8 +284,6 @@
         
         function hideModal() { modal.style.display = "none"; }
         window.onclick = function(event) { if (event.target == modal) hideModal(); }
-
-        // --- FUNZIONI DI GESTIONE EVENTI E SQUADRE ---
 
         function assignTeam(orgId) {
             const org = organizations.find(o => o.id === orgId);
@@ -281,9 +304,8 @@
             showAssignedTeams(selectedEvent);
         }
 
-        function releaseTeam(orgId) {
+        function releaseTeam(orgId, eventId) {
             const org = organizations.find(o => o.id === orgId);
-            const eventId = org.assignedToEventId;
             const event = activeEvents.find(e => e.id === eventId);
             if (event) {
                 event.assignedTeams = event.assignedTeams.filter(team => team.id !== org.id);
@@ -291,7 +313,7 @@
             org.assignedToEventId = null;
             org.marker.getElement().classList.remove('marker-unavailable');
             if (modal.style.display === "flex") {
-                showModal(org); // Aggiorna la modale se è aperta
+                hideModal();
             }
             updateCounters();
             if (selectedEvent && selectedEvent.id === eventId) {
@@ -303,14 +325,14 @@
             const eventIndex = activeEvents.findIndex(e => e.id === eventId);
             if (eventIndex > -1) {
                 const event = activeEvents[eventIndex];
-                [...event.assignedTeams].forEach(org => releaseTeam(org.id));
+                [...event.assignedTeams].forEach(org => releaseTeam(org.id, event.id));
                 layerGroups.events.removeLayer(event.marker);
                 activeEvents.splice(eventIndex, 1);
                 if (selectedEvent && selectedEvent.id === eventId) {
                     selectedEvent = null;
                     document.getElementById('results-content').innerHTML = '';
                     document.getElementById('results-title').innerText = 'Squadre Più Vicine';
-                    document.getElementById('status').innerHTML = '<p>Evento terminato. Seleziona un altro evento o creane uno nuovo.</p>';
+                    document.getElementById('status').innerHTML = '<p>Evento terminato.</p>';
                     document.getElementById('status').style.display = 'block';
                 }
                 updateCounters();
@@ -318,55 +340,16 @@
         }
 
         function selectEvent(event) {
+            if (selectedEvent && selectedEvent.marker) {
+                 selectedEvent.marker.getElement().classList.remove('marker-selected');
+            }
             selectedEvent = event;
+            selectedEvent.marker.getElement().classList.add('marker-selected');
+            map.panTo(event.latlng);
             updateEventsList();
             showAssignedTeams(event);
         }
         
-        function showNearestTeams(event) {
-            document.getElementById('results-title').innerText = `Squadre vicine a evento ${event.sigerId || '(nuovo)'}`;
-            const availableOrgs = organizations.filter(org => org.assignedToEventId === null);
-            availableOrgs.forEach(org => org.distance = event.latlng.distanceTo(org.latlng));
-            const sortedOrgs = availableOrgs.sort((a, b) => a.distance - b.distance);
-            
-            let recommendedName = null;
-            const recommendedCDB = sortedOrgs.find(org => org.type === 'CDB');
-            if (recommendedCDB) {
-                recommendedName = recommendedCDB.name;
-            } else if (sortedOrgs.length > 0) {
-                recommendedName = sortedOrgs[0].name;
-            }
-            updateResults(sortedOrgs, recommendedName);
-        }
-
-        function showAssignedTeams(event) {
-            document.getElementById('results-title').innerHTML = `Squadre assegnate a evento ${event.sigerId || ''}`;
-            const contentDiv = document.getElementById('results-content');
-            contentDiv.innerHTML = '';
-            if(event.assignedTeams.length === 0) {
-                contentDiv.innerHTML = "<p>Nessuna squadra assegnata a questo evento.</p>";
-            }
-            event.assignedTeams.forEach(org => {
-                const item = document.createElement('div');
-                item.className = 'result-item';
-                item.innerHTML = `<b>${org.name}</b> (${org.municipality}) <button onclick="releaseTeam(${org.id})" style="float:right;color:red;font-weight:bold;">Sgancia</button>`;
-                contentDiv.appendChild(item);
-            });
-            const addButton = document.createElement('button');
-            addButton.innerText = 'Aggiungi Altra Squadra';
-            addButton.style.width = '100%';
-            addButton.style.marginTop = '10px';
-            addButton.onclick = () => showNearestTeams(event);
-            contentDiv.appendChild(addButton);
-        }
-
-        function cancelEvent() {
-            if (tempEventMarker) {
-                map.removeLayer(tempEventMarker);
-                tempEventMarker = null;
-            }
-        }
-
         function confirmEvent(lat, lon) {
             cancelEvent();
             const latlng = L.latLng(lat, lon);
@@ -375,7 +358,6 @@
             activeEvents.push(newEvent);
             eventMarker.on('click', () => selectEvent(newEvent));
             selectEvent(newEvent);
-            updateCounters();
         }
 
         async function createConfirmationPopup(latlng) {
@@ -400,8 +382,23 @@
                 else alert('Indirizzo non trovato.');
             } catch (error) { alert('Errore di rete.'); }
         }
+        
+        function resetState() {
+            organizations.forEach(org => {
+                org.assignedToEventId = null;
+                if (org.marker.getElement()) org.marker.getElement().classList.remove('marker-unavailable');
+            });
+            layerGroups.events.clearLayers();
+            activeEvents = [];
+            selectedEvent = null;
+            cancelEvent();
+            document.getElementById('results-content').innerHTML = '';
+            document.getElementById('results-title').innerText = 'Squadre Più Vicine';
+            document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto. Clicca sulla mappa per creare un evento.</p>';
+            document.getElementById('status').style.display = 'block';
+            updateCounters();
+        }
 
-        // --- CARICAMENTO DATI INIZIALE ---
         Promise.all([
             fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`).then(res => res.text()),
             fetch('https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson').then(res => res.json()),
