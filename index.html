@@ -30,7 +30,7 @@
         .header-title p { font-size: 1em; margin: 0; color: #6c757d; }
         .header-nav { display: flex; flex-wrap: nowrap; }
         .header-nav .nav-button {
-            padding: 12px 18px; margin-left: 10px; background-color: #f8f9fa; color: #343a40;
+            padding: 12px 18px; margin-left: 8px; background-color: #f8f9fa; color: #343a40;
             text-decoration: none; border: 1px solid #ced4da; border-radius: 5px; font-size: 14px;
             cursor: pointer; transition: all 0.2s; font-weight: 500; white-space: nowrap;
         }
@@ -56,9 +56,9 @@
             position: absolute; bottom: 15px; left: 15px; z-index: 1000;
             padding: 15px 20px; font-size: 16px;
         }
-        #stats-box h4 { margin: 0 0 10px 0; border-bottom: 1px solid #ccc; padding-bottom: 8px; font-size: 1.1em;}
+        #stats-box h4 { margin: 0 0 10px 0; border-bottom: 1px solid #ccc; padding-bottom: 8px; font-size: 1.2em;}
         #stats-box p { margin: 6px 0; }
-        .leaflet-control-layers { border: none !important; font-size: 14px; }
+        .leaflet-control-layers { border: none !important; font-size: 15px; }
         .leaflet-control-layers-list { padding: 10px; }
 
         /* RISULTATI e STATI */
@@ -66,13 +66,17 @@
         #results-content .result-item:hover { background-color: #f0f8ff; }
         .recommended { animation: flashing-border 1.5s infinite; }
         @keyframes flashing-border { 0%, 100% { border-color: #28a745; } 50% { border-color: transparent; } }
+        .assigned { border: 2px solid #0d6efd; background-color: #e7f1ff; }
         .marker-unavailable { filter: grayscale(100%) opacity: 0.5; }
         
         /* MODALE */
-        .modal-content { max-width: 700px; padding: 30px; }
-        
-        /* Altri stili invariati */
-        .modal{display:none;position:fixed;z-index:2000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.5);justify-content:center;align-items:center}.modal-content{background-color:#fefefe;margin:auto;border-radius:8px;width:90%;position:relative}.modal-close{color:#aaa;float:right;font-size:28px;font-weight:700;cursor:pointer}#modal-actions button{width:100%;padding:12px;font-size:16px;margin-top:15px;border-radius:4px;border:none;color:#fff;cursor:pointer}#assign-button{background-color:#28a745}#release-button{background-color:#dc3545}
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 30px; border-radius: 8px; width: 90%; max-width: 700px; position: relative; }
+        .modal-close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        #modal-actions button { width: 100%; padding: 12px; font-size: 16px; margin-top: 15px; border-radius: 4px; border: none; color: white; cursor: pointer; }
+        #assign-button { background-color: #28a745; }
+        #release-button { background-color: #dc3545; }
+        .confirmation-popup-button { padding: 8px 15px; font-size: 14px; margin: 5px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
@@ -155,32 +159,188 @@
         
         const modal = document.getElementById('detail-modal');
         
-        function updateCounters() { /* ... codice ... */ }
-        function updateResults(sortedOrgs, recommendedName) { /* ... codice ... */ }
-        function showModal(org) { /* ... codice ... */ }
-        function hideModal() { modal.style.display = "none"; }
-        window.onclick = function(event) { if (event.target == modal) hideModal(); }
-        function assignTeam(org) { /* ... codice ... */ }
-        function releaseTeam(org) { /* ... codice ... */ }
-        function confirmEvent(lat, lon) { /* ... codice ... */ }
-        function cancelEvent() { if (tempEventMarker) { map.removeLayer(tempEventMarker); tempEventMarker = null; } }
-        async function createConfirmationPopup(latlng) { /* ... codice ... */ }
-        function resetState() { /* ... codice ... */ }
-        async function searchLocation() { /* ... codice ... */ }
-        
-        // --- INCOLLA QUI LE FUNZIONI COMPLETE ---
-        function updateCounters(){const t=organizations.filter(n=>"CDB"!==n.type).length,e=organizations.filter(n=>"CDB"!==n.type&&n.isAssigned).length,o=organizations.filter(n=>"CDB"===n.type).length,n=organizations.filter(n=>"CDB"===n.type&&n.isAssigned).length;document.getElementById("odv-stats").innerText=`${e} / ${t}`,document.getElementById("cdb-stats").innerText=`${n} / ${o}`,document.getElementById("events-stats").innerText=activeEvents.length}
-        function updateResults(t,e){const n=document.getElementById("results-content");n.innerHTML="",t.slice(0,NUMBER_OF_RESULTS).forEach(t=>{const o=document.createElement("div");o.className="result-item",e===t.name&&o.classList.add("recommended"),o.innerHTML=`<b>${t.name}</b> (${t.municipality})<br><i>Distanza: ${(t.distance/1e3).toFixed(2)} km</i>`,o.onclick=()=>showModal(t),n.appendChild(o)})}
-        function showModal(t){document.getElementById("modal-title").innerText=t.name,document.getElementById("modal-comune").innerText=t.municipality,document.getElementById("modal-referente").innerText=t.contactPerson,document.getElementById("modal-telefono").innerText=t.contactInfo;const e=document.getElementById("modal-stato"),n=document.getElementById("modal-actions");if(n.innerHTML="",t.isAssigned){const o=activeEvents.find(e=>e.assignedTeam&&e.assignedTeam.name===t.name);e.innerHTML=`<span style="color:red; font-weight:bold;">IMPEGNATA</span> (Evento ID: ${o?o.sigerId:"..."})`;const i=document.createElement("button");i.id="release-button",i.innerText="Sgancia Squadra",i.onclick=()=>releaseTeam(t),n.appendChild(i)}else{e.innerHTML=`<span style="color:green; font-weight:bold;">LIBERA</span>`;const o=document.createElement("button");o.id="assign-button",o.innerText="Assegna a Evento Corrente",o.onclick=()=>assignTeam(t),currentEventForAssignment&&!currentEventForAssignment.assignedTeam||(o.disabled=!0,o.innerText="Nessun evento attivo per assegnazione"),n.appendChild(o)}modal.style.display="flex"}
-        function assignTeam(t){const e=prompt("Inserisci l'ID SIGER di riferimento (facoltativo):","");null!==e&&(t.isAssigned=!0,currentEventForAssignment.assignedTeam=t,currentEventForAssignment.sigerId=e||"N/A",t.marker.getElement().classList.add("marker-unavailable"),currentEventForAssignment.marker.bindPopup(`<b>Evento ID: ${e}</b><br>Squadra: ${t.name}`).openPopup(),hideModal(),updateCounters(),processEmergency(currentEventForAssignment.latlng,!1))}
-        function releaseTeam(t){const e=activeEvents.find(e=>e.assignedTeam&&e.assignedTeam.name===t.name);e&&(e.assignedTeam=null),t.isAssigned=!1,t.marker.getElement().classList.remove("marker-unavailable"),hideModal(),updateCounters()}
-        async function createConfirmationPopup(t){cancelEvent();const e=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${t.lat}&lon=${t.lng}`),n=await e.json();let o="Posizione Sconosciuta";n&&n.display_name&&(o=n.display_name.split(",").slice(0,3).join(","));const i=`<div style="text-align:center;"><b>Creare evento qui?</b><br><small>${o}</small><br><br><button onclick="confirmEvent(${t.lat}, ${t.lng})">Conferma</button> <button onclick="cancelEvent()">Annulla</button></div>`;tempEventMarker=L.marker(t,{icon:flameIcon}).addTo(map).bindPopup(i).openPopup()}
-        function confirmEvent(t,e){cancelEvent(),processEmergency(L.latLng(t,e))}
-        async function processEmergency(t,e=!0){if(e){currentEventForAssignment={id:Date.now(),sigerId:null,marker:null,assignedTeam:null,latlng:t},activeEvents.push(currentEventForAssignment);const n=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${t.lat}&lon=${t.lng}`),o=await n.json();let i="Posizione Sconosciuta";o&&o.display_name&&(i=o.display_name.split(",").slice(0,3).join(",")),currentEventForAssignment.marker=L.marker(t,{icon:flameIcon}).addTo(layerGroups.events).bindPopup(`<b>Nuovo Evento</b><br>${i}`).openPopup()}map.panTo(t);const n=organizations.filter(t=>!t.isAssigned);n.forEach(e=>e.distance=t.distanceTo(e.latlng));const o=n.sort((t,e)=>t.distance-e.distance);let i=null;const s=o.find(t=>"CDB"===t.type);s?i=s.name:o.length>0&&(i=o[0].name),document.getElementById("status").style.display="none",updateResults(o,i),updateCounters()}
-        function resetState(){organizations.forEach(t=>{t.isAssigned=!1,t.marker.getElement()&&t.marker.getElement().classList.remove("marker-unavailable")}),layerGroups.events.clearLayers(),activeEvents=[],currentEventForAssignment=null,document.getElementById("results-content").innerHTML="",document.getElementById("status").innerHTML='<p style="font-size: 14px;">Pronto.</p>',document.getElementById("status").style.display="block",updateCounters()}
-        async function searchLocation(){const t=document.getElementById("search-box").value;if(t)try{const e=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(t)}&countrycodes=it`),n=await e.json();n&&n.length>0?createConfirmationPopup(L.latLng(n[0].lat,n[0].lon)):alert("Indirizzo non trovato.")}catch(t){alert("Errore di rete.")}}
+        function updateCounters() {
+            const totalODV = organizations.filter(org => org.type !== 'CDB').length;
+            const assignedODV = organizations.filter(org => org.type !== 'CDB' && org.isAssigned).length;
+            const totalCDB = organizations.filter(org => org.type === 'CDB').length;
+            const assignedCDB = organizations.filter(org => org.type === 'CDB' && org.isAssigned).length;
+            
+            document.getElementById('odv-stats').innerText = `${assignedODV} / ${totalODV}`;
+            document.getElementById('cdb-stats').innerText = `${assignedCDB} / ${totalCDB}`;
+            document.getElementById('events-stats').innerText = activeEvents.length;
+        }
 
-        // --- CARICAMENTO DATI ---
+        function updateResults(sortedOrgs, recommendedName) {
+            const contentDiv = document.getElementById('results-content');
+            contentDiv.innerHTML = '';
+            sortedOrgs.slice(0, NUMBER_OF_RESULTS).forEach(org => {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                if (org.name === recommendedName) {
+                    item.classList.add('recommended');
+                }
+                item.innerHTML = `<b>${org.name}</b> (${org.municipality})<br><i>Distanza: ${(org.distance / 1000).toFixed(2)} km</i>`;
+                item.onclick = () => showModal(org);
+                contentDiv.appendChild(item);
+            });
+        }
+
+        function showModal(org) {
+            document.getElementById('modal-title').innerText = org.name;
+            document.getElementById('modal-comune').innerText = org.municipality;
+            document.getElementById('modal-referente').innerText = org.contactPerson;
+            document.getElementById('modal-telefono').innerText = org.contactInfo;
+
+            const statusSpan = document.getElementById('modal-stato');
+            const actionsDiv = document.getElementById('modal-actions');
+            actionsDiv.innerHTML = '';
+
+            if (org.isAssigned) {
+                const event = activeEvents.find(e => e.assignedTeam && e.assignedTeam.name === org.name);
+                statusSpan.innerHTML = `<span style="color:red; font-weight:bold;">IMPEGNATA</span> (Evento ID: ${event ? event.sigerId : 'Sconosciuto'})`;
+                const releaseButton = document.createElement('button');
+                releaseButton.id = 'release-button';
+                releaseButton.innerText = 'Sgancia Squadra';
+                releaseButton.onclick = () => releaseTeam(org);
+                actionsDiv.appendChild(releaseButton);
+            } else {
+                statusSpan.innerHTML = `<span style="color:green; font-weight:bold;">LIBERA</span>`;
+                const assignButton = document.createElement('button');
+                assignButton.id = 'assign-button';
+                assignButton.innerText = 'Assegna a Evento Corrente';
+                assignButton.onclick = () => assignTeam(org);
+                if (!currentEventForAssignment || currentEventForAssignment.assignedTeam) {
+                    assignButton.disabled = true;
+                    assignButton.innerText = 'Nessun evento attivo per l\'assegnazione';
+                }
+                actionsDiv.appendChild(assignButton);
+            }
+            modal.style.display = "flex";
+        }
+        
+        function hideModal() { 
+            modal.style.display = "none"; 
+        }
+
+        window.onclick = function(event) { 
+            if (event.target == modal) hideModal(); 
+        }
+
+        function assignTeam(org) {
+            const sigerId = prompt("Inserisci l'ID SIGER di riferimento (facoltativo):", "");
+            if (sigerId === null) return;
+            
+            org.isAssigned = true;
+            currentEventForAssignment.assignedTeam = org;
+            currentEventForAssignment.sigerId = sigerId || 'N/A';
+            
+            org.marker.getElement().classList.add('marker-unavailable');
+            currentEventForAssignment.marker.bindPopup(`<b>Evento ID: ${sigerId}</b><br>Squadra: ${org.name}`).openPopup();
+            
+            hideModal();
+            updateCounters();
+            
+            // Aggiorna la lista dei risultati per l'evento corrente, escludendo la squadra appena assegnata
+            const availableOrgs = organizations.filter(o => !o.isAssigned);
+            availableOrgs.forEach(o => o.distance = currentEventForAssignment.latlng.distanceTo(o.latlng));
+            const sortedOrgs = availableOrgs.sort((a, b) => a.distance - b.distance);
+            updateResults(sortedOrgs, null); // Rimuove la raccomandazione dopo l'assegnazione
+        }
+
+        function releaseTeam(org) {
+            const event = activeEvents.find(e => e.assignedTeam && e.assignedTeam.name === org.name);
+            if (event) {
+                event.assignedTeam = null;
+            }
+            org.isAssigned = false;
+            org.marker.getElement().classList.remove('marker-unavailable');
+            hideModal();
+            updateCounters();
+        }
+
+        function cancelEvent() {
+            if (tempEventMarker) {
+                map.removeLayer(tempEventMarker);
+                tempEventMarker = null;
+            }
+        }
+
+        function confirmEvent(lat, lon) {
+            cancelEvent(); // Rimuove il marker temporaneo
+            processEmergency(L.latLng(lat, lon)); // Avvia il flusso di lavoro effettivo
+        }
+
+        async function createConfirmationPopup(latlng) {
+            cancelEvent(); // Rimuove qualsiasi marker di conferma precedente
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`);
+            const data = await response.json();
+            let locationName = "Posizione Sconosciuta";
+            if (data && data.display_name) {
+                locationName = data.display_name.split(',').slice(0, 3).join(',');
+            }
+            const popupContent = `
+                <div style="text-align:center;">
+                    <b>Creare evento qui?</b><br><small>${locationName}</small><br><br>
+                    <button class="confirmation-popup-button" onclick="confirmEvent(${latlng.lat}, ${latlng.lng})">Conferma</button>
+                    <button class="confirmation-popup-button" onclick="cancelEvent()">Annulla</button>
+                </div>`;
+            tempEventMarker = L.marker(latlng, { icon: flameIcon }).addTo(map).bindPopup(popupContent, {closeOnClick: false, closeButton: false}).openPopup();
+        }
+        
+        function processEmergency(latlng) {
+            const eventMarker = L.marker(latlng, { icon: flameIcon }).addTo(layerGroups.events).bindPopup('<b>Nuovo Evento</b>').openPopup();
+            
+            currentEventForAssignment = { id: Date.now(), sigerId: null, marker: eventMarker, assignedTeam: null, latlng: latlng };
+            activeEvents.push(currentEventForAssignment);
+            
+            map.panTo(latlng);
+            
+            const availableOrgs = organizations.filter(org => !org.isAssigned);
+            availableOrgs.forEach(org => org.distance = latlng.distanceTo(org.latlng));
+            const sortedOrgs = availableOrgs.sort((a, b) => a.distance - b.distance);
+            
+            let recommendedName = null;
+            const recommendedCDB = sortedOrgs.find(org => org.type === 'CDB');
+            if (recommendedCDB) {
+                recommendedName = recommendedCDB.name;
+            } else if (sortedOrgs.length > 0) {
+                recommendedName = sortedOrgs[0].name;
+            }
+
+            document.getElementById('status').style.display = 'none';
+            updateResults(sortedOrgs, recommendedName);
+            updateCounters();
+        }
+        
+        function resetState() {
+            organizations.forEach(org => {
+                org.isAssigned = false;
+                if (org.marker.getElement()) org.marker.getElement().classList.remove('marker-unavailable');
+            });
+            layerGroups.events.clearLayers();
+            activeEvents = [];
+            currentEventForAssignment = null;
+            cancelEvent();
+            document.getElementById('results-content').innerHTML = '';
+            document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto. Clicca sulla mappa per creare un evento.</p>';
+            document.getElementById('status').style.display = 'block';
+            updateCounters();
+        }
+
+        async function searchLocation() {
+            const query = document.getElementById('search-box').value;
+            if (!query) return;
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=it`);
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    createConfirmationPopup(L.latLng(data[0].lat, data[0].lon));
+                } else {
+                    alert('Indirizzo non trovato.');
+                }
+            } catch (error) { alert('Errore di rete.'); }
+        }
+
         Promise.all([
             fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`).then(res => res.text()),
             fetch('https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson').then(res => res.json()),
@@ -189,23 +349,34 @@
             const json = JSON.parse(sheetText.substring(47).slice(0, -2));
             const headers = json.table.cols.map(col => col.label.toLowerCase().trim());
             const rows = json.table.rows;
-            const idx = { name: headers.indexOf(COLUMN_NAMES.name), municipality: headers.indexOf(COLUMN_NAMES.municipality), contactPerson: headers.indexOf(COLUMN_NAMES.contactPerson), contactInfo: headers.indexOf(COLUMN_NAMES.contactInfo), sighting: headers.indexOf(COLUMN_NAMES.sighting), lat: headers.indexOf(COLUMN_NAMES.lat), lon: headers.indexOf(COLUMN_NAMES.lon) };
+            const idx = {
+                name: headers.indexOf(COLUMN_NAMES.name), municipality: headers.indexOf(COLUMN_NAMES.municipality),
+                contactPerson: headers.indexOf(COLUMN_NAMES.contactPerson), contactInfo: headers.indexOf(COLUMN_NAMES.contactInfo),
+                sighting: headers.indexOf(COLUMN_NAMES.sighting), lat: headers.indexOf(COLUMN_NAMES.lat), lon: headers.indexOf(COLUMN_NAMES.lon)
+            };
             rows.forEach(row => {
                 const lat = row.c[idx.lat] ? row.c[idx.lat].v : null;
                 const lon = row.c[idx.lon] ? row.c[idx.lon].v : null;
                 if (typeof lat === 'number' && typeof lon === 'number') {
                     const orgName = (idx.name > -1 && row.c[idx.name]) ? row.c[idx.name].v : 'N/D';
                     const org = {
-                        name: orgName, municipality: (idx.municipality > -1 && row.c[idx.municipality]) ? row.c[idx.municipality].v : 'N/D',
+                        name: orgName,
+                        municipality: (idx.municipality > -1 && row.c[idx.municipality]) ? row.c[idx.municipality].v : 'N/D',
                         contactPerson: (idx.contactPerson > -1 && row.c[idx.contactPerson]) ? row.c[idx.contactPerson].v : 'N/D',
                         contactInfo: (idx.contactInfo > -1 && row.c[idx.contactInfo]) ? row.c[idx.contactInfo].v : 'N/D',
                         sighting: (idx.sighting > -1 && row.c[idx.sighting]) ? row.c[idx.sighting].v : '',
-                        latlng: L.latLng(lat, lon), isAssigned: false, type: orgName.toUpperCase() === 'CDB' ? 'CDB' : 'ODV'
+                        latlng: L.latLng(lat, lon),
+                        isAssigned: false,
+                        type: orgName.toUpperCase().includes('CDB') ? 'CDB' : 'ODV'
                     };
                     let markerIcon, targetLayer;
-                    if (org.type === 'CDB') { markerIcon = cdbIcon; targetLayer = layerGroups.cdb; } 
-                    else if (org.sighting.toLowerCase() === 'si') { markerIcon = sightingIcon; targetLayer = layerGroups.sighting; }
-                    else { markerIcon = firefightingIcon; targetLayer = layerGroups.firefighting; }
+                    if (org.type === 'CDB') {
+                        markerIcon = cdbIcon; targetLayer = layerGroups.cdb;
+                    } else if (org.sighting.toLowerCase() === 'si') {
+                        markerIcon = sightingIcon; targetLayer = layerGroups.sighting;
+                    } else {
+                        markerIcon = firefightingIcon; targetLayer = layerGroups.firefighting;
+                    }
                     org.marker = L.marker(org.latlng, {icon: markerIcon}).addTo(targetLayer).on('click', () => showModal(org));
                     organizations.push(org);
                 }
@@ -218,9 +389,12 @@
             L.geoJson(municipalityData, { style: {"color": "#6c757d", "weight": 1, "opacity": 0.5, "fillOpacity": 0.05}, filter: (f) => f.properties.reg_istat_code_num === 17 }).addTo(layerGroups.municipality);
             
             const layerControl = L.control.layers(null, {
-                "Confine Regionale": layerGroups.region, "Confini Comunali": layerGroups.municipality,
-                "Squadre Operative": layerGroups.firefighting, "Squadre Avvistamento": layerGroups.sighting,
-                "Consorzi di Bonifica": layerGroups.cdb, "Eventi": layerGroups.events
+                "Confine Regionale": layerGroups.region,
+                "Confini Comunali": layerGroups.municipality,
+                "Squadre Operative": layerGroups.firefighting,
+                "Squadre Avvistamento": layerGroups.sighting,
+                "Consorzi di Bonifica": layerGroups.cdb,
+                "Eventi": layerGroups.events
             }, { position: 'topleft', collapsed: false }).addTo(map);
             layerControl.getContainer().classList.add('dashboard-panel');
 
@@ -231,7 +405,10 @@
             document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto.</p>';
             
             map.on('click', e => {
-                if (regionBounds && !regionBounds.contains(e.latlng)) { return; }
+                if (regionBounds && !regionBounds.contains(e.latlng)) {
+                    alert("È possibile creare eventi solo all'interno dei confini regionali.");
+                    return; 
+                }
                 createConfirmationPopup(e.latlng);
             });
         }).catch(error => {
