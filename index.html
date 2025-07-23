@@ -75,6 +75,7 @@
         .recommended { animation: flashing-border 1.5s infinite; }
         @keyframes flashing-border { 0%, 100% { border-color: #28a745; } 50% { border-color: transparent; } }
         .marker-unavailable { filter: grayscale(100%) opacity: 0.5; }
+        .marker-selected { transform: scale(1.5); z-index: 10000 !important; }
         
         /* MODALE */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
@@ -144,37 +145,39 @@
     </div>
 
     <script>
-        // --- CONFIGURAZIONE E VARIABILI GLOBALI ---
+        // --- CONFIGURAZIONE ---
         const SHEET_ID = '1mNeb2ObFeD72o-WfNEzM4f2JfWl9iguqN4KGytpFS_Y';
         const SHEET_NAME = 'Foglio1'; 
         const NUMBER_OF_RESULTS = 10;
         const COLUMN_NAMES = { name: 'associazione', municipality: 'comune', contactPerson: 'referente', contactInfo: 'telefono', sighting: 'avvistamento', lat: 'lat', lon: 'lon' };
 
+        // --- VARIABILI DI STATO ---
+        const organizations = [];
+        let activeEvents = [];
+        let selectedEvent = null;
+        let regionBounds = null;
+        let tempEventMarker = null;
+
+        // --- ELEMENTI DOM E MAPPA ---
         const map = L.map('map', { zoomControl: false });
         L.control.zoom({ position: 'topleft' }).addTo(map);
-
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+        const modal = document.getElementById('detail-modal');
         
+        // --- ICONE ---
         const firefightingIcon = L.icon({ iconUrl: 'https://img.icons8.com/plasticine/100/fire-extinguisher.png', iconSize: [38, 38], iconAnchor: [19, 38] });
         const sightingIcon = L.icon({ iconUrl: 'https://img.icons8.com/plasticine/100/binoculars.png', iconSize: [38, 38], iconAnchor: [19, 38] });
         const cdbIcon = L.icon({ iconUrl: 'https://img.icons8.com/office/80/building.png', iconSize: [32, 32], iconAnchor: [16, 32] });
         const flameIcon = L.icon({ iconUrl: 'https://img.icons8.com/fluency/96/fire-element--v1.png', iconSize: [42, 42], iconAnchor: [21, 42] });
 
+        // --- GRUPPI DI LIVELLI ---
         const layerGroups = {
             firefighting: L.layerGroup().addTo(map), sighting: L.layerGroup().addTo(map),
             cdb: L.layerGroup().addTo(map), region: L.layerGroup().addTo(map),
             municipality: L.layerGroup(), events: L.layerGroup().addTo(map)
         };
 
-        const organizations = [];
-        let activeEvents = [];
-        let selectedEvent = null;
-        let regionBounds = null;
-        let tempEventMarker = null;
-        
-        const modal = document.getElementById('detail-modal');
-        
-        // --- FUNZIONI DI GESTIONE STATO E UI ---
+        // --- FUNZIONI DI AGGIORNAMENTO UI ---
         
         function updateCounters() {
             const totalODV = organizations.filter(org => org.type !== 'CDB').length;
@@ -208,15 +211,10 @@
             });
         }
 
-        function showNearestTeams(event, recommendedName) {
-            document.getElementById('results-title').innerText = `Squadre vicine a evento ${event.sigerId || '(nuovo)'}`;
+        function updateResults(sortedOrgs, recommendedName) {
             const contentDiv = document.getElementById('results-content');
             contentDiv.innerHTML = '';
-            
-            const availableOrgs = organizations.filter(org => org.assignedToEventId === null);
-            availableOrgs.forEach(org => org.distance = event.latlng.distanceTo(org.latlng));
-            const sortedOrgs = availableOrgs.sort((a, b) => a.distance - b.distance);
-
+            document.getElementById('results-title').innerText = 'Squadre Più Vicine';
             sortedOrgs.slice(0, NUMBER_OF_RESULTS).forEach(org => {
                 const item = document.createElement('div');
                 item.className = 'result-item';
@@ -228,27 +226,6 @@
                 contentDiv.appendChild(item);
             });
         }
-        
-        function showAssignedTeams(event) {
-            document.getElementById('results-title').innerHTML = `Squadre assegnate a evento ${event.sigerId || ''}`;
-            const contentDiv = document.getElementById('results-content');
-            contentDiv.innerHTML = '';
-            if(event.assignedTeams.length === 0) {
-                contentDiv.innerHTML = "<p>Nessuna squadra assegnata a questo evento.</p>";
-            }
-            event.assignedTeams.forEach(org => {
-                const item = document.createElement('div');
-                item.className = 'result-item';
-                item.innerHTML = `<b>${org.name}</b> (${org.municipality}) <button onclick="releaseTeam(${org.id}, ${event.id})" style="float:right;color:red;font-weight:bold;">Sgancia</button>`;
-                contentDiv.appendChild(item);
-            });
-            const addButton = document.createElement('button');
-            addButton.innerText = 'Aggiungi Altra Squadra';
-            addButton.style.width = '100%';
-            addButton.style.marginTop = '10px';
-            addButton.onclick = () => showNearestTeams(event);
-            contentDiv.appendChild(addButton);
-        }
 
         function showModal(org) {
             document.getElementById('modal-title').innerText = org.name;
@@ -259,13 +236,13 @@
             const actionsDiv = document.getElementById('modal-actions');
             actionsDiv.innerHTML = '';
 
-            if (org.assignedToEventId) {
+            if (org.assignedToEventId !== null) {
                 const event = activeEvents.find(e => e.id === org.assignedToEventId);
                 statusSpan.innerHTML = `<span style="color:red; font-weight:bold;">IMPEGNATA</span> (ID Evento: ${event ? event.sigerId : 'Sconosciuto'})`;
                 const releaseButton = document.createElement('button');
                 releaseButton.id = 'release-button';
                 releaseButton.innerText = 'Sgancia Squadra';
-                releaseButton.onclick = () => releaseTeam(org.id, event.id);
+                releaseButton.onclick = () => releaseTeam(org.id);
                 actionsDiv.appendChild(releaseButton);
             } else {
                 statusSpan.innerHTML = `<span style="color:green; font-weight:bold;">LIBERA</span>`;
@@ -285,6 +262,8 @@
         function hideModal() { modal.style.display = "none"; }
         window.onclick = function(event) { if (event.target == modal) hideModal(); }
 
+        // --- FUNZIONI DI GESTIONE EVENTI E SQUADRE ---
+
         function assignTeam(orgId) {
             const org = organizations.find(o => o.id === orgId);
             if (!selectedEvent) {
@@ -301,11 +280,13 @@
             org.marker.getElement().classList.add('marker-unavailable');
             hideModal();
             updateCounters();
-            showAssignedTeams(selectedEvent);
+            selectEvent(selectedEvent); // Aggiorna la vista
         }
 
-        function releaseTeam(orgId, eventId) {
+        function releaseTeam(orgId) {
             const org = organizations.find(o => o.id === orgId);
+            if (!org) return;
+            const eventId = org.assignedToEventId;
             const event = activeEvents.find(e => e.id === eventId);
             if (event) {
                 event.assignedTeams = event.assignedTeams.filter(team => team.id !== org.id);
@@ -313,11 +294,11 @@
             org.assignedToEventId = null;
             org.marker.getElement().classList.remove('marker-unavailable');
             if (modal.style.display === "flex") {
-                hideModal();
+                showModal(org);
             }
             updateCounters();
             if (selectedEvent && selectedEvent.id === eventId) {
-                showAssignedTeams(selectedEvent);
+                selectEvent(selectedEvent); // Aggiorna la vista
             }
         }
 
@@ -325,7 +306,7 @@
             const eventIndex = activeEvents.findIndex(e => e.id === eventId);
             if (eventIndex > -1) {
                 const event = activeEvents[eventIndex];
-                [...event.assignedTeams].forEach(org => releaseTeam(org.id, event.id));
+                [...event.assignedTeams].forEach(org => releaseTeam(org.id));
                 layerGroups.events.removeLayer(event.marker);
                 activeEvents.splice(eventIndex, 1);
                 if (selectedEvent && selectedEvent.id === eventId) {
@@ -341,15 +322,22 @@
 
         function selectEvent(event) {
             if (selectedEvent && selectedEvent.marker) {
-                 selectedEvent.marker.getElement().classList.remove('marker-selected');
+                 selectedEvent.marker.getElement()?.classList.remove('marker-selected');
             }
             selectedEvent = event;
-            selectedEvent.marker.getElement().classList.add('marker-selected');
+            selectedEvent.marker.getElement()?.classList.add('marker-selected');
             map.panTo(event.latlng);
             updateEventsList();
             showAssignedTeams(event);
         }
-        
+
+        function cancelEvent() {
+            if (tempEventMarker) {
+                map.removeLayer(tempEventMarker);
+                tempEventMarker = null;
+            }
+        }
+
         function confirmEvent(lat, lon) {
             cancelEvent();
             const latlng = L.latLng(lat, lon);
@@ -399,6 +387,7 @@
             updateCounters();
         }
 
+        // --- CARICAMENTO DATI INIZIALE ---
         Promise.all([
             fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`).then(res => res.text()),
             fetch('https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson').then(res => res.json()),
