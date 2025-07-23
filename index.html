@@ -22,7 +22,7 @@
             display: flex; align-items: center; justify-content: space-between;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2); box-sizing: border-box;
         }
-        .header-logo img { height: 50px; vertical-align: middle; }
+        .header-logo img { height: 50px; }
         .header-title { text-align: center; flex-grow: 1; margin: 0 20px; }
         .header-title h1 { font-size: 1.5em; margin: 0; }
         .header-title p { font-size: 0.8em; margin: 0; color: #666; }
@@ -71,11 +71,11 @@
             <img src="logo.png" alt="Logo Protezione Civile Basilicata">
         </div>
         <div class="header-title">
-            <h1>SALA OPERATIVA UNIFICATA PERMANENTE REGIONE BASILICATA</h1>
+            <h1>SALA OPERATIVA UNIFICATA REGIONE BASILICATA</h1>
             <p>Credits: Protezione Civile Basilicata - AM</p>
         </div>
         <nav class="header-nav">
-            <a href="https://www.formazionesicurezza.org/protezionecivile/acqua/" target="_blank" rel="noopener noreferrer" class="nav-button">RISORSE IDRICHE</a>
+            <a href="https://www.formazionesicurezza.org/protezionecivile/acqua/" target="_blank" rel="noopener noreferrer" class="nav-button">Risorse Idriche</a>
             <a href="https://macnil.gtfleet.net/" target="_blank" rel="noopener noreferrer" class="nav-button">GPS ODV</a>
             <a href="https://gtalarm.net/" target="_blank" rel="noopener noreferrer" class="nav-button">GPS CDB</a>
             <a href="https://traccar.arka.tech/" target="_blank" rel="noopener noreferrer" class="nav-button">GPS ELICOTTERO</a>
@@ -140,27 +140,37 @@
         const organizations = [];
         let activeEvents = [];
         let currentEvent = null;
+        let regionBounds = null; // Variabile per memorizzare i confini
         
         const modal = document.getElementById('detail-modal');
-        function showModal(org) {
-            document.getElementById('modal-title').innerText = org.name;
-            document.getElementById('modal-comune').innerText = org.municipality;
-            document.getElementById('modal-referente').innerText = org.contactPerson;
-            document.getElementById('modal-telefono').innerText = org.contactInfo;
-            document.getElementById('modal-mezzo').innerText = org.vehicle;
-            document.getElementById('modal-targa').innerText = org.plate;
-            modal.style.display = "flex";
-        }
+        function showModal(org) { /* ... (codice invariato) ... */ }
         function hideModal() { modal.style.display = "none"; }
         window.onclick = function(event) { if (event.target == modal) hideModal(); }
 
-        function assignTeam(org, element) {
+        async function assignTeam(org, element) {
             if (!currentEvent || currentEvent.assignedTeam) {
                 showModal(org);
                 return;
             }
+
+            const eventId = prompt("Inserisci l'ID SIGER per abbinare la squadra all'evento:", "");
+            if (!eventId) return; // L'utente ha annullato
+
             org.assigned = true;
+            currentEvent.id = eventId;
             currentEvent.assignedTeam = org;
+            
+            // Aggiorna il popup dell'evento con l'ID
+            const latlng = currentEvent.marker.getLatLng();
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`);
+            const data = await response.json();
+            let popupText = `<b>Evento ID: ${eventId}</b>`;
+            if (data && data.address) {
+                const municipality = data.address.municipality || data.address.town || data.address.village || data.address.city;
+                if (municipality) popupText += `<br>Comune: ${municipality}`;
+            }
+            currentEvent.marker.bindPopup(popupText).openPopup();
+            
             document.querySelectorAll('.result-item').forEach(el => el.classList.remove('assigned', 'recommended'));
             element.classList.add('assigned');
             org.marker.getElement().classList.add('marker-unavailable');
@@ -183,21 +193,15 @@
             });
         }
 
-        async function processEmergency(latlng) {
-            const eventId = prompt("Inserisci l'ID SIGER per questo evento:", "");
-            if (!eventId) return;
-
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`);
-            const data = await response.json();
-            let popupText = `<b>Evento ID: ${eventId}</b>`;
-            if (data && data.address) {
-                const municipality = data.address.municipality || data.address.town || data.address.village || data.address.city;
-                if (municipality) popupText += `<br>Comune: ${municipality}`;
+        function processEmergency(latlng) {
+            if (currentEvent && !currentEvent.assignedTeam) {
+                // Rimuove un evento precedente se non è stato finalizzato
+                layerGroups.events.removeLayer(currentEvent.marker);
             }
-            
+
+            const popupText = `<b>Nuovo Evento</b><br><i>Assegna una squadra per confermare</i>`;
             const eventMarker = L.marker(latlng, { icon: flameIcon }).addTo(layerGroups.events).bindPopup(popupText).openPopup();
-            currentEvent = { id: eventId, marker: eventMarker, assignedTeam: null };
-            activeEvents.push(currentEvent);
+            currentEvent = { marker: eventMarker, assignedTeam: null };
             
             map.panTo(latlng);
             
@@ -234,11 +238,10 @@
         }
 
         async function searchLocation() {
-            const query = document.getElementById('search-box').value;
-            if (!query) return;
             // ... (logica di ricerca invariata)
         }
 
+        // --- Inizializzazione e Caricamento Dati ---
         Promise.all([
             fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`).then(res => res.text()),
             fetch('https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson').then(res => res.json()),
@@ -267,7 +270,7 @@
                         plate: (idx.plate > -1 && row.c[idx.plate]) ? row.c[idx.plate].v : 'N/D',
                         sighting: (idx.sighting > -1 && row.c[idx.sighting]) ? row.c[idx.sighting].v : '',
                         latlng: L.latLng(lat, lon),
-                        assigned: false // Aggiungi lo stato di disponibilità
+                        assigned: false
                     };
                     let markerIcon, targetLayer;
                     if (org.name.toUpperCase() === 'CDB') {
@@ -282,8 +285,11 @@
                     organizations.push(org);
                 }
             });
-            const regionLayer = L.geoJson(regionData, { style: {"color": "#0d6efd", "weight": 3, "opacity": 0.8, "fillOpacity": 0.05}, filter: (f) => f.properties.reg_istat_code_num === 17 }).addTo(layerGroups.region);
-            map.fitBounds(regionLayer.getBounds());
+
+            const regionGeoJsonLayer = L.geoJson(regionData, { style: {"color": "#0d6efd", "weight": 3, "opacity": 0.8, "fillOpacity": 0.05}, filter: (f) => f.properties.reg_istat_code_num === 17 }).addTo(layerGroups.region);
+            regionBounds = regionGeoJsonLayer.getBounds(); // Salva i confini
+            map.fitBounds(regionBounds);
+
             L.geoJson(municipalityData, { style: {"color": "#6c757d", "weight": 1, "opacity": 0.6, "fillOpacity": 0.05}, filter: (f) => f.properties.reg_istat_code_num === 17 }).addTo(layerGroups.municipality);
             
             L.control.layers(null, {
@@ -297,12 +303,23 @@
             document.getElementById('search-button').disabled = false;
             document.getElementById('search-box').placeholder = "Indirizzo o Lat,Lon";
             document.getElementById('status').innerHTML = '<p style="font-size: 14px;">Pronto.</p>';
-            map.on('click', e => processEmergency(e.latlng));
+            
+            // Abilita il click sulla mappa solo ora, con il controllo dei confini
+            map.on('click', e => {
+                if (regionBounds && !regionBounds.contains(e.latlng)) {
+                    alert("Per favore, clicca all'interno dei confini della Basilicata.");
+                    return;
+                }
+                processEmergency(e.latlng);
+            });
+
         }).catch(error => {
             console.error('Errore critico durante il caricamento:', error);
             document.getElementById('status').innerHTML = `<p style="color:red;">Errore caricamento dati. Controlla la console.</p>`;
         });
         
+        // --- Codice Invariato per UI ---
+        function showModal(org) { document.getElementById('modal-title').innerText = org.name; document.getElementById('modal-comune').innerText = org.municipality; document.getElementById('modal-referente').innerText = org.contactPerson; document.getElementById('modal-telefono').innerText = org.contactInfo; document.getElementById('modal-mezzo').innerText = org.vehicle; document.getElementById('modal-targa').innerText = org.plate; modal.style.display = "flex"; }
         async function searchLocation() { const query = document.getElementById('search-box').value; if (!query) return; const statusDiv = document.getElementById('status'); statusDiv.style.display = 'block'; statusDiv.innerHTML = '<p>Ricerca in corso...</p>'; const coordRegex = /^[-\d.\s]+,[-\d.\s]+$/; if (coordRegex.test(query)) { const [lat, lon] = query.split(',').map(parseFloat); if (!isNaN(lat) && !isNaN(lon)) return processEmergency(L.latLng(lat, lon)); } try { const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=it`); const data = await response.json(); if (data && data.length > 0) processEmergency(L.latLng(data[0].lat, data[0].lon)); else { alert('Indirizzo non trovato.'); statusDiv.style.display = 'none'; } } catch (error) { alert('Errore di rete.'); statusDiv.style.display = 'none'; } }
         document.getElementById('search-box').addEventListener('keyup', e => { if (e.key === 'Enter') document.getElementById('search-button').click(); });
     </script>
