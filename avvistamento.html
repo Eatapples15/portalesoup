@@ -3,219 +3,324 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mappa Pattugliamento Avvistamento</title>
+    <title>Pianificazione Pattugliamento</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     
     <style>
-        html, body, #map {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-            padding: 0;
+        html, body {
+            height: 100%; width: 100%; margin: 0; padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-        #panel {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            width: 300px;
-            max-height: 90%;
-            overflow-y: auto;
-        }
-        #panel h3 {
-            margin-top: 0;
-        }
-        #odv-list .odv-item {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        #odv-list .odv-item:hover {
             background-color: #f0f0f0;
         }
-        #odv-list .odv-item.selected {
-            background-color: #cfe2ff;
-            font-weight: bold;
+        #map { height: 100%; width: 100%; }
+        
+        .dashboard-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(200, 200, 200, 0.5);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 15px;
+            position: absolute;
+            z-index: 1000;
         }
-        .assigned-label {
-            font-size: 0.8em;
-            color: #28a745;
-            font-weight: bold;
+        #panel {
+            top: 10px; right: 10px;
+            width: 380px; max-height: calc(100% - 20px);
+            display: flex; flex-direction: column;
         }
+        #panel-content {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        #panel h4 {
+            margin-top: 15px; margin-bottom: 5px;
+            padding-bottom: 5px; border-bottom: 1px solid #ccc;
+        }
+        #panel h4:first-child { margin-top: 0; }
+
+        #stats-box {
+            bottom: 10px; left: 10px;
+        }
+        #stats-box h4 { margin: 0 0 8px 0; }
+        #stats-box p { margin: 4px 0; font-size: 14px; }
+
+        .patrol-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .patrol-name { font-weight: bold; font-size: 1.1em; }
+        .patrol-time { font-size: 0.9em; color: #555; }
+        .patrol-status { font-size: 0.9em; font-style: italic; margin-bottom: 10px; }
+        .patrol-status.status-planned { color: #f0ad4e; }
+        .patrol-status.status-active { color: #5cb85c; }
+        .patrol-status.status-ended { color: #d9534f; }
+
+        .action-button { padding: 8px 12px; border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 14px; margin-right: 5px; }
+        .btn-plan { background-color: #007bff; }
+        .btn-activate { background-color: #5cb85c; }
+        .btn-end { background-color: #d9534f; }
+        .btn-reset { background-color: #ffc107; color: #333; font-weight: bold; width: 100%; margin-bottom: 10px;}
+
+        /* MODALE */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; }
+        .modal-close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
-    <div id="panel">
-        <h3>ODV di Avvistamento</h3>
-        <div id="status"><p>Caricamento dati...</p></div>
-        <div id="odv-list"></div>
+    <div id="panel" class="dashboard-panel">
+        <button class="action-button btn-plan" onclick="showPlanModal()" style="width:100%; margin-bottom: 15px;">Nuova Programmazione</button>
+        <button class="action-button btn-reset" onclick="resetAllPatrols()">Reset Attività</button>
+        <div id="panel-content">
+            <h4>Programmazione</h4>
+            <div id="panel-planned"></div>
+            <h4>Attività in Corso</h4>
+            <div id="panel-active"></div>
+            <h4>Attività Terminate</h4>
+            <div id="panel-ended"></div>
+        </div>
+    </div>
+    <div id="stats-box" class="dashboard-panel">
+        <h4>Statistiche Attivazioni</h4>
+        <p><strong>Numero Attivazioni Odierne:</strong> <span id="activation-count">0</span></p>
+        <p><strong>Durata Totale Avvistamenti:</strong> <span id="total-duration">00:00:00</span></p>
+    </div>
+
+    <div id="plan-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="hidePlanModal()">&times;</span>
+            <h3>Programma Pattugliamento</h3>
+            <p>Seleziona una squadra libera e inserisci l'orario.</p>
+            <select id="idle-odv-select" style="width: 100%; padding: 8px; margin-bottom: 10px;"></select>
+            <input type="text" id="patrol-time-input" placeholder="Es. 09:00-13:00" style="width: 100%; box-sizing: border-box; padding: 8px;">
+            <button class="action-button btn-plan" style="width: 100%; margin-top: 15px;" onclick="savePlan()">Salva e Disegna Area</button>
+        </div>
     </div>
 
     <script>
-        // --- CONFIGURAZIONE ---
         const SHEET_ID = '1mNeb2ObFeD72o-WfNEzM4f2JfWl9iguqN4KGytpFS_Y';
         const SHEET_NAME = 'Foglio1'; 
-        const COLUMN_NAMES = { 
-            name: 'associazione', 
-            sighting: 'avvistamento', 
-            lat: 'lat', 
-            lon: 'lon' 
-        };
+        const COLUMN_NAMES = { name: 'associazione', sighting: 'avvistamento', lat: 'lat', lon: 'lon', context: 'contesto' };
 
-        // --- INIZIALIZZAZIONE MAPPA ---
         const map = L.map('map').setView([40.5, 15.8], 9);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' 
-        }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
 
-        // --- STATO DELL'APPLICAZIONE ---
         const sightingODVs = [];
-        let selectedODV = null;
+        let teamToPlan = null;
 
-        // --- SETUP LIVELLI E DISEGNO ---
         const drawnItems = new L.FeatureGroup().addTo(map);
         const drawControl = new L.Control.Draw({
-            draw: {
-                polygon: true,
-                polyline: false,
-                rectangle: true,
-                circle: false,
-                marker: false,
-                circlemarker: false
-            },
-            edit: {
-                featureGroup: drawnItems
-            }
+            draw: { polygon: true, polyline: false, rectangle: true, circle: false, marker: false, circlemarker: false },
+            edit: { featureGroup: drawnItems }
         });
         map.addControl(drawControl);
 
-        // --- FUNZIONI PRINCIPALI ---
+        const stylePlanned = { color: '#ffc107', weight: 2, opacity: 0.8, fillOpacity: 0.2 };
+        const styleActive = { color: '#28a745', weight: 3, opacity: 0.9, fillOpacity: 0.3 };
+        const styleEnded = { color: '#6c757d', weight: 1, opacity: 0.5, fillOpacity: 0.1 };
 
-        function updateODVList() {
-            const listDiv = document.getElementById('odv-list');
-            listDiv.innerHTML = '';
+        const modal = document.getElementById('plan-modal');
+
+        function formatDuration(seconds) {
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function updateUI() {
+            const panels = {
+                planned: document.getElementById('panel-planned'),
+                active: document.getElementById('panel-active'),
+                ended: document.getElementById('panel-ended')
+            };
+            Object.values(panels).forEach(p => p.innerHTML = '');
+
             sightingODVs.forEach(org => {
+                let statusText, statusClass, actionButton, targetPanel;
+
+                switch(org.patrol.status) {
+                    case 'PLANNED':
+                        statusText = `Programmata (${org.patrol.plannedTime})`;
+                        statusClass = 'status-planned';
+                        actionButton = `<button class="action-button btn-activate" onclick="activatePatrol(${org.id})">Attiva</button>`;
+                        targetPanel = panels.planned;
+                        break;
+                    case 'ACTIVE':
+                        const duration = Math.floor((new Date() - org.patrol.activeStartTime) / 1000);
+                        statusText = `ATTIVA da ${formatDuration(duration)}`;
+                        statusClass = 'status-active';
+                        actionButton = `<button class="action-button btn-end" onclick="endPatrol(${org.id})">Termina</button>`;
+                        targetPanel = panels.active;
+                        break;
+                    case 'ENDED':
+                        statusText = `Terminata (Durata: ${org.patrol.duration})`;
+                        statusClass = 'status-ended';
+                        actionButton = '';
+                        targetPanel = panels.ended;
+                        break;
+                    default: // IDLE
+                        return; // Non mostrare le squadre libere nei pannelli
+                }
+
                 const item = document.createElement('div');
-                item.className = 'odv-item';
-                item.id = `odv-${org.id}`;
-                item.innerText = org.name;
-                
-                if (org.patrolArea) {
-                    const assignedLabel = document.createElement('span');
-                    assignedLabel.className = 'assigned-label';
-                    assignedLabel.innerText = ' - Area Assegnata';
-                    item.appendChild(assignedLabel);
-                }
-
-                if (selectedODV && selectedODV.id === org.id) {
-                    item.classList.add('selected');
-                }
-                
-                item.onclick = () => selectODV(org);
-                listDiv.appendChild(item);
+                item.className = 'patrol-item';
+                item.innerHTML = `
+                    <div class="patrol-name">${org.name}</div>
+                    <div class="patrol-status ${statusClass}">${statusText}</div>
+                    <div>${actionButton}</div>
+                `;
+                targetPanel.appendChild(item);
             });
+            updateCounters();
         }
 
-        function selectODV(org) {
-            selectedODV = org;
-            updateODVList(); // Aggiorna la UI per mostrare la selezione
+        function updateCounters() {
+            const activationsToday = sightingODVs.filter(org => org.patrol.activeStartTime).length;
+            let totalSeconds = 0;
+            sightingODVs.forEach(org => {
+                if(org.patrol.status === 'ACTIVE') {
+                    totalSeconds += (new Date() - org.patrol.activeStartTime) / 1000;
+                } else if (org.patrol.status === 'ENDED' && org.patrol.activeStartTime && org.patrol.activeEndTime) {
+                    totalSeconds += (org.patrol.activeEndTime - org.patrol.activeStartTime) / 1000;
+                }
+            });
+            document.getElementById('activation-count').innerText = activationsToday;
+            document.getElementById('total-duration').innerText = formatDuration(totalSeconds);
         }
 
-        // --- GESTIONE EVENTI DI DISEGNO ---
-        map.on(L.Draw.Event.CREATED, function (event) {
-            const layer = event.layer;
-
-            if (!selectedODV) {
-                alert("Per favore, seleziona prima una squadra a cui assegnare questa zona.");
+        function showPlanModal() {
+            const select = document.getElementById('idle-odv-select');
+            select.innerHTML = '';
+            const idleTeams = sightingODVs.filter(org => org.patrol.status === 'IDLE');
+            if (idleTeams.length === 0) {
+                alert("Nessuna squadra libera da programmare.");
                 return;
             }
-
-            // Rimuovi la vecchia area se ne esisteva una
-            if (selectedODV.patrolArea) {
-                drawnItems.removeLayer(selectedODV.patrolArea);
+            idleTeams.forEach(org => {
+                const option = document.createElement('option');
+                option.value = org.id;
+                option.innerText = org.name;
+                select.appendChild(option);
+            });
+            document.getElementById('patrol-time-input').value = '';
+            modal.style.display = "flex";
+        }
+        function hidePlanModal() { modal.style.display = "none"; }
+        
+        function savePlan() {
+            const orgId = document.getElementById('idle-odv-select').value;
+            const time = document.getElementById('patrol-time-input').value;
+            if (!time) {
+                alert("Inserisci un orario per la programmazione.");
+                return;
             }
+            const org = sightingODVs.find(o => o.id == orgId);
+            org.patrol.plannedTime = time;
+            teamToPlan = org;
+            hidePlanModal();
+            updateUI();
+        }
+        
+        function activatePatrol(orgId) {
+            const org = sightingODVs.find(o => o.id === orgId);
+            org.patrol.status = 'ACTIVE';
+            org.patrol.activeStartTime = new Date();
+            if(org.patrol.area) org.patrol.area.setStyle(styleActive);
+            updateUI();
+        }
 
-            // Assegna la nuova area
-            selectedODV.patrolArea = layer;
-            
-            layer.bindPopup(`<b>Area di pattuglia per:</b><br>${selectedODV.name}`);
-            layer.setStyle({ color: '#28a745', weight: 2 });
+        function endPatrol(orgId) {
+            const org = sightingODVs.find(o => o.id === orgId);
+            org.patrol.status = 'ENDED';
+            org.patrol.activeEndTime = new Date();
+            const durationSeconds = (org.patrol.activeEndTime - org.patrol.activeStartTime) / 1000;
+            org.patrol.duration = formatDuration(durationSeconds);
+            if(org.patrol.area) org.patrol.area.setStyle(styleEnded);
+            updateUI();
+        }
+        
+        function resetAllPatrols() {
+            if (!confirm("Sei sicuro di voler resettare tutte le attività?")) return;
+            sightingODVs.forEach(org => {
+                org.patrol = { area: null, status: 'IDLE', plannedTime: null, activeStartTime: null, activeEndTime: null, duration: null };
+            });
+            drawnItems.clearLayers();
+            updateUI();
+        }
+        
+        map.on(L.Draw.Event.CREATED, function (event) {
+            if (!teamToPlan) {
+                alert("Devi prima avviare una programmazione dal pannello di destra!");
+                return;
+            }
+            const layer = event.layer;
+            if (teamToPlan.patrol.area) drawnItems.removeLayer(teamToPlan.patrol.area);
+            teamToPlan.patrol.area = layer;
+            teamToPlan.patrol.status = 'PLANNED';
+            layer.bindPopup(`<b>Area per: ${teamToPlan.name}</b><br>Orario: ${teamToPlan.patrol.plannedTime}`);
+            layer.setStyle(stylePlanned);
             drawnItems.addLayer(layer);
-            
-            // Resetta la selezione e aggiorna la lista
-            selectedODV = null;
-            updateODVList();
+            teamToPlan = null;
+            updateUI();
         });
 
-        // --- CARICAMENTO DATI DAL FOGLIO GOOGLE ---
+        // --- CARICAMENTO DATI ---
         const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
+        Promise.all([
+            fetch(sheetUrl).then(res => res.text()),
+            fetch('https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson').then(res => res.json()),
+            fetch('https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_municipalities.geojson').then(res => res.json())
+        ]).then(([sheetText, regionData, municipalityData]) => {
+            const json = JSON.parse(sheetText.substring(47).slice(0, -2));
+            const headers = json.table.cols.map(col => col.label.toLowerCase().trim());
+            const rows = json.table.rows;
+            const idx = { name: headers.indexOf(COLUMN_NAMES.name), sighting: headers.indexOf(COLUMN_NAMES.sighting), lat: headers.indexOf(COLUMN_NAMES.lat), lon: headers.indexOf(COLUMN_NAMES.lon), context: headers.indexOf(COLUMN_NAMES.context) };
+            
+            rows.forEach((row, i) => {
+                const lat = row.c[idx.lat] ? row.c[idx.lat].v : null;
+                const lon = row.c[idx.lon] ? row.c[idx.lon].v : null;
+                const sightingValue = (idx.sighting > -1 && row.c[idx.sighting]) ? row.c[idx.sighting].v : '';
 
-        fetch(sheetUrl)
-            .then(response => response.text())
-            .then(text => {
-                const json = JSON.parse(text.substring(47).slice(0, -2));
-                const headers = json.table.cols.map(col => col.label.toLowerCase().trim());
-                const rows = json.table.rows;
-                
-                const idx = {
-                    name: headers.indexOf(COLUMN_NAMES.name),
-                    sighting: headers.indexOf(COLUMN_NAMES.sighting),
-                    lat: headers.indexOf(COLUMN_NAMES.lat),
-                    lon: headers.indexOf(COLUMN_NAMES.lon)
-                };
-
-                rows.forEach((row, i) => {
-                    const lat = row.c[idx.lat] ? row.c[idx.lat].v : null;
-                    const lon = row.c[idx.lon] ? row.c[idx.lon].v : null;
-                    const sightingValue = (idx.sighting > -1 && row.c[idx.sighting]) ? row.c[idx.sighting].v : '';
-
-                    // Filtra solo le ODV di avvistamento
-                    if (typeof lat === 'number' && typeof lon === 'number' && sightingValue && sightingValue.toLowerCase() === 'si') {
-                        const orgName = (idx.name > -1 && row.c[idx.name]) ? row.c[idx.name].v : 'N/D';
-                        const org = {
-                            id: i,
-                            name: orgName,
-                            latlng: L.latLng(lat, lon),
-                            patrolArea: null
-                        };
-                        
-                        const sightingIcon = L.icon({
-                            iconUrl: 'https://img.icons8.com/plasticine/100/binoculars.png',
-                            iconSize: [38, 38],
-                            iconAnchor: [19, 38],
-                            popupAnchor: [0, -38]
-                        });
-                        
-                        org.marker = L.marker(org.latlng, { icon: sightingIcon })
-                            .addTo(map)
-                            .bindPopup(`<b>${org.name}</b><br>Squadra di avvistamento`)
-                            .on('click', () => selectODV(org));
-                        
-                        sightingODVs.push(org);
-                    }
-                });
-                
-                document.getElementById('status').style.display = 'none';
-                updateODVList();
-                
-            }).catch(error => {
-                console.error('Errore nel caricamento dei dati:', error);
-                document.getElementById('status').innerHTML = `<p style="color:red;">Errore caricamento dati. Controlla la console.</p>`;
+                if (typeof lat === 'number' && typeof lon === 'number' && sightingValue && sightingValue.toLowerCase() === 'si') {
+                    const org = {
+                        id: i,
+                        name: (idx.name > -1 && row.c[idx.name]) ? row.c[idx.name].v : 'N/D',
+                        context: (idx.context > -1 && row.c[idx.context]) ? row.c[idx.context].v : 'N/D',
+                        latlng: L.latLng(lat, lon),
+                        patrol: { area: null, status: 'IDLE', plannedTime: null, activeStartTime: null, activeEndTime: null, duration: null }
+                    };
+                    const icon = L.icon({ iconUrl: 'https://img.icons8.com/plasticine/100/binoculars.png', iconSize: [38, 38], iconAnchor: [19, 38] });
+                    org.marker = L.marker(org.latlng, { icon: icon }).addTo(map).bindPopup(`<b>${org.name}</b>`);
+                    sightingODVs.push(org);
+                }
             });
+            
+            document.getElementById('info-box').innerHTML = '';
+            updateUI();
 
+            const regionLayer = L.geoJson(regionData, { style: {"color": "#007bff", "weight": 2.5, "opacity": 0.65}, filter: (f) => f.properties.reg_istat_code_num === 17 });
+            const munLayer = L.geoJson(municipalityData, { style: {"color": "#6c757d", "weight": 1, "opacity": 0.5}, filter: (f) => f.properties.reg_istat_code_num === 17 });
+            
+            L.control.layers(null, {
+                "Confine Regionale": regionLayer.addTo(map),
+                "Confini Comunali": munLayer,
+                "Aree di Pattuglia": drawnItems
+            }, { position: 'topleft' }).addTo(map);
+
+            setInterval(updateUI, 1000); // Aggiorna i timer ogni secondo
+
+        }).catch(error => {
+            console.error('Errore nel caricamento dei dati:', error);
+            document.getElementById('info-box').innerHTML = `<div id="status-message" style="background-color: #f8d7da;">Errore caricamento dati.</div>`;
+        });
     </script>
 </body>
 </html>
