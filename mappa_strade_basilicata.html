@@ -2,121 +2,141 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Mappa con Tracciato Dettagliato</title>
+    <title>Mappa Stradale Basilicata con Street View</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; }
-        .leaflet-popup-content { font-family: sans-serif; font-size: 12px; }
-        .loading-message {
+        html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; background-color: #f0f0f0; }
+        .leaflet-popup-content { font-family: sans-serif; font-size: 13px; line-height: 1.5; }
+        .leaflet-popup-content a { color: #0078A8; text-decoration: none; font-weight: bold; }
+        .leaflet-popup-content a:hover { text-decoration: underline; }
+        #loading-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 5px;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #loading-box {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
             font-family: sans-serif;
             font-size: 16px;
-            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
-<div id="loading" class="loading-message">Caricamento tracciato dettagliato...</div>
+<div id="loading-overlay">
+    <div id="loading-box">
+        <p><strong>Caricamento Mappa Stradale...</strong></p>
+        <p id="loading-status">Inizializzazione...</p>
+    </div>
+</div>
 
 <script>
-    // 1. Inizializzazione Mappa
-    const map = L.map('map').setView([40.5, 16.2], 10);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    // --- DATI DELLE STRADE (INIZIO E FINE) ---
+    const roads = [
+        { label: "SS99 - Matera-Puglia", start: { lat: 40.7432, lng: 16.5680 }, end: { lat: 40.6681, lng: 16.6053 }, color: '#e6194B' },
+        { label: "SP103 (Sud)", start: { lat: 40.2958, lng: 16.5229 }, end: { lat: 40.2015, lng: 16.4339 }, color: '#3cb44b' },
+        { label: "SS93 - Potenza-Lavello", start: { lat: 40.7305, lng: 15.8075 }, end: { lat: 41.0456, lng: 15.7946 }, color: '#ffe119' },
+        { label: "SS401 - Ofantina", start: { lat: 40.8865, lng: 15.4678 }, end: { lat: 40.9491, lng: 15.7725 }, color: '#4363d8' },
+        { label: "SS7 - Appia", start: { lat: 40.8452, lng: 15.3768 }, end: { lat: 40.6620, lng: 16.5991 }, color: '#f58231' },
+        { label: "SP381", start: { lat: 40.7790, lng: 15.3806 }, end: { lat: 40.7180, lng: 15.4326 }, color: '#911eb4' },
+        { label: "SP51", start: { lat: 40.6520, lng: 15.4965 }, end: { lat: 40.5739, lng: 15.4184 }, color: '#42d4f4' },
+        { label: "E847 / RA5", start: { lat: 40.6158, lng: 15.4542 }, end: { lat: 40.6380, lng: 15.7554 }, color: '#f032e6' },
+        { label: "SP ex SS94", start: { lat: 40.5972, lng: 15.4699 }, end: { lat: 40.6200, lng: 15.6882 }, color: '#bfef45' },
+        { label: "SP12", start: { lat: 40.5671, lng: 15.5380 }, end: { lat: 40.6253, lng: 15.6309 }, color: '#fabed4' },
+        { label: "SS598 - Fondovalle Agri", start: { lat: 40.4594, lng: 15.5783 }, end: { lat: 40.1636, lng: 16.5910 }, color: '#469990' },
+        { label: "SS95 - di Brienza", start: { lat: 40.4591, lng: 15.5794 }, end: { lat: 40.3541, lng: 15.6315 }, color: '#dcbeff' },
+        { label: "SS276", start: { lat: 40.2920, lng: 15.7802 }, end: { lat: 40.3703, lng: 16.0964 }, color: '#9A6324' },
+        { label: "SP103 (Nord)", start: { lat: 40.2449, lng: 15.8034 }, end: { lat: 40.2920, lng: 15.7802 }, color: '#fffac8' },
+        { label: "SP26", start: { lat: 40.2234, lng: 15.7970 }, end: { lat: 40.1802, lng: 15.9189 }, color: '#800000' },
+        { label: "SS19 - delle Calabrie", start: { lat: 40.1785, lng: 15.7127 }, end: { lat: 39.8822, lng: 15.8236 }, color: '#aaffc3' },
+        { label: "SP ex SS104", start: { lat: 40.0616, lng: 15.6760 }, end: { lat: 39.9822, lng: 15.8118 }, color: '#808000' },
+        { label: "SS18 - Tirrena", start: { lat: 40.0443, lng: 15.6467 }, end: { lat: 39.8780, lng: 15.7951 }, color: '#ffd8b1' }
+    ];
 
-    // Funzioni ausiliarie (invariate)
+    // --- MAPPA E FUNZIONI ---
+    const map = L.map('map').setView([40.5, 16.0], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+    const layerControl = L.control.layers(null, null, { collapsed: false }).addTo(map);
+
     function getDistance(lat1, lon1, lat2, lon2) {
         const R = 6371e3;
-        const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
-        const Δλ = (lon2 - lon1) * Math.PI / 180;
-        const d = Math.acos(Math.sin(φ1) * Math.sin(φ2) + Math.cos(φ1) * Math.cos(φ2) * Math.cos(Δλ)) * R;
-        return d;
+        const p1 = lat1 * Math.PI / 180, p2 = lat2 * Math.PI / 180;
+        const delta = (lon2 - lon1) * Math.PI / 180;
+        return Math.acos(Math.sin(p1) * Math.sin(p2) + Math.cos(p1) * Math.cos(p2) * Math.cos(delta)) * R;
     }
 
-    function generateKilometerMarkers(polyline, layerGroup) {
-        let totalDistance = 0, lastMarkerDistance = 0;
+    function generateKilometerMarkers(polyline, layerGroup, roadLabel) {
+        let totalDist = 0, lastMarkerDist = 0;
         const latlngs = polyline.getLatLngs();
         for (let i = 0; i < latlngs.length - 1; i++) {
-            const startPoint = latlngs[i], endPoint = latlngs[i + 1];
-            const segmentDistance = getDistance(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng);
-            while (lastMarkerDistance + 1000 <= totalDistance + segmentDistance) {
-                const distanceToNextMarker = lastMarkerDistance + 1000 - totalDistance;
-                const ratio = distanceToNextMarker / segmentDistance;
-                const markerLat = startPoint.lat + (endPoint.lat - startPoint.lat) * ratio;
-                const markerLng = startPoint.lng + (endPoint.lng - startPoint.lng) * ratio;
-                const km = Math.round((lastMarkerDistance + 1000) / 1000);
-                const marker = L.circleMarker([markerLat, markerLng], { radius: 4, color: '#c0392b', fillColor: '#e74c3c', fillOpacity: 1 });
-                marker.bindPopup(`<b>SS407 - Km: ${km}</b><br>Lat: ${markerLat.toFixed(6)}<br>Lon: ${markerLng.toFixed(6)}`);
+            const start = latlngs[i], end = latlngs[i + 1];
+            const segmentDist = getDistance(start.lat, start.lng, end.lat, end.lng);
+            while (lastMarkerDist + 1000 <= totalDist + segmentDist) {
+                const distToMarker = lastMarkerDist + 1000 - totalDist;
+                const ratio = distToMarker / segmentDist;
+                const markerLat = start.lat + (end.lat - start.lat) * ratio;
+                const markerLng = start.lng + (end.lng - start.lng) * ratio;
+                const km = Math.round((lastMarkerDist + 1000) / 1000);
+                
+                const streetViewUrl = `https://www.google.com/maps?q=&layer=c&cbll=${markerLat},${markerLng}`;
+                const popupContent = `<b>${roadLabel} - Km ${km}</b><br>` +
+                                     `Lat: ${markerLat.toFixed(6)}<br>` +
+                                     `Lon: ${markerLng.toFixed(6)}<br>` +
+                                     `<a href="${streetViewUrl}" target="_blank">Apri Street View</a>`;
+
+                const marker = L.circleMarker([markerLat, markerLng], { radius: 4, color: '#000', weight: 1, fillColor: '#fff', fillOpacity: 0.9 });
+                marker.bindPopup(popupContent);
                 marker.addTo(layerGroup);
-                lastMarkerDistance += 1000;
+                lastMarkerDist += 1000;
             }
-            totalDistance += segmentDistance;
+            totalDist += segmentDist;
         }
     }
 
-    // 2. Funzione per recuperare e disegnare il tracciato
-    async function fetchAndDrawRoute(startCoords, endCoords, roadInfo) {
-        const loadingMessage = document.getElementById('loading');
-        loadingMessage.style.display = 'block';
-
-        // Costruisce l'URL per l'API di routing
-        const url = `https://router.project-osrm.org/route/v1/driving/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson`;
-
+    async function fetchAndDrawRoute(road) {
+        const url = `https://router.project-osrm.org/route/v1/driving/${road.start.lng},${road.start.lat};${road.end.lng},${road.end.lat}?overview=full&geometries=geojson`;
         try {
             const response = await fetch(url);
             const data = await response.json();
+            if (data.code !== 'Ok') return; // Salta la strada se non trova il percorso
             
-            if (data.code !== 'Ok') {
-                throw new Error('Impossibile trovare un percorso.');
-            }
-            
-            // Estrae la geometria del percorso (una lista di coordinate)
-            const routeCoordinates = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]); // Inverte [lon, lat] a [lat, lon]
-            
-            // Crea il tracciato e il gruppo di layer
-            const polyline = L.polyline(routeCoordinates, { color: roadInfo.color, weight: 6 });
+            const routeCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            const polyline = L.polyline(routeCoords, { color: road.color, weight: 5, opacity: 0.8 });
             const roadLayerGroup = L.layerGroup();
             
             polyline.addTo(roadLayerGroup);
-            generateKilometerMarkers(polyline, roadLayerGroup);
-            
-            // Aggiunge il layer alla mappa e al controllo
-            roadLayerGroup.addTo(map);
-            layerControl.addOverlay(roadLayerGroup, roadInfo.label);
-
-            // Centra la mappa sul tracciato
-            map.fitBounds(polyline.getBounds());
-
+            generateKilometerMarkers(polyline, roadLayerGroup, road.label);
+            layerControl.addOverlay(roadLayerGroup, road.label);
         } catch (error) {
-            console.error('Errore nel caricamento del tracciato:', error);
-            alert(`Non è stato possibile caricare il tracciato per ${roadInfo.label}.`);
-        } finally {
-            loadingMessage.style.display = 'none';
+            console.error(`Errore nel caricamento di ${road.label}:`, error);
         }
     }
 
-    // 3. Esecuzione
-    const layerControl = L.control.layers(null, null, { collapsed: false }).addTo(map);
+    // --- ESECUZIONE PRINCIPALE ---
+    async function processAllRoads() {
+        const loadingStatus = document.getElementById('loading-status');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        
+        for (let i = 0; i < roads.length; i++) {
+            loadingStatus.textContent = `Caricamento tracciato ${i + 1} di ${roads.length}: ${roads[i].label}...`;
+            await fetchAndDrawRoute(roads[i]);
+        }
+        
+        loadingOverlay.style.display = 'none';
+    }
 
-    // Definiamo i punti di inizio e fine per la SS407 "Basentana"
-    const ss407_start = { lat: 40.638, lng: 15.755 }; // Potenza Est
-    const ss407_end = { lat: 40.380, lng: 16.822 };   // Metaponto
-    const ss407_info = { label: 'SS407 Basentana (Dettagliata)', color: '#e74c3c' };
-
-    // Chiamiamo la funzione per disegnare la strada
-    fetchAndDrawRoute(ss407_start, ss407_end, ss407_info);
+    processAllRoads();
 
 </script>
 </body>
