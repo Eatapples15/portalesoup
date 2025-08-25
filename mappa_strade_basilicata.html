@@ -1,160 +1,122 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-F8">
-    <title>Mappa Interattiva Strade Basilicata</title>
+    <meta charset="UTF-8">
+    <title>Mappa con Tracciato Dettagliato</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        html, body, #map {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        .leaflet-popup-content {
+        html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; }
+        .leaflet-popup-content { font-family: sans-serif; font-size: 12px; }
+        .loading-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 5px;
             font-family: sans-serif;
-            font-size: 12px;
-        }
-        .leaflet-popup-content b {
-            color: #333;
+            font-size: 16px;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
+<div id="loading" class="loading-message">Caricamento tracciato dettagliato...</div>
 
 <script>
-    // Inizializzazione della mappa centrata sulla Basilicata
-    const map = L.map('map').setView([40.5, 16.0], 9);
-
-    // Aggiunta del layer di base (mappa) da OpenStreetMap
+    // 1. Inizializzazione Mappa
+    const map = L.map('map').setView([40.5, 16.2], 10);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Funzione per calcolare la distanza tra due punti (formula Haversine)
+    // Funzioni ausiliarie (invariate)
     function getDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; // Raggio della Terra in metri
-        const φ1 = lat1 * Math.PI / 180;
-        const φ2 = lat2 * Math.PI / 180;
-        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const R = 6371e3;
+        const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
         const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                  Math.cos(φ1) * Math.cos(φ2) *
-                  Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return R * c; // in metri
+        const d = Math.acos(Math.sin(φ1) * Math.sin(φ2) + Math.cos(φ1) * Math.cos(φ2) * Math.cos(Δλ)) * R;
+        return d;
     }
 
-    // Funzione per generare i marcatori chilometrici lungo un tracciato
     function generateKilometerMarkers(polyline, layerGroup) {
-        let totalDistance = 0;
-        let lastMarkerDistance = 0;
+        let totalDistance = 0, lastMarkerDistance = 0;
         const latlngs = polyline.getLatLngs();
-
         for (let i = 0; i < latlngs.length - 1; i++) {
-            const startPoint = latlngs[i];
-            const endPoint = latlngs[i + 1];
+            const startPoint = latlngs[i], endPoint = latlngs[i + 1];
             const segmentDistance = getDistance(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng);
-
             while (lastMarkerDistance + 1000 <= totalDistance + segmentDistance) {
                 const distanceToNextMarker = lastMarkerDistance + 1000 - totalDistance;
                 const ratio = distanceToNextMarker / segmentDistance;
-                
                 const markerLat = startPoint.lat + (endPoint.lat - startPoint.lat) * ratio;
                 const markerLng = startPoint.lng + (endPoint.lng - startPoint.lng) * ratio;
-                
                 const km = Math.round((lastMarkerDistance + 1000) / 1000);
-                
-                const marker = L.circleMarker([markerLat, markerLng], {
-                    radius: 4,
-                    color: '#c0392b',
-                    fillColor: '#e74c3c',
-                    fillOpacity: 1
-                });
-                
-                marker.bindPopup(`<b>Km: ${km}</b><br>Lat: ${markerLat.toFixed(6)}<br>Lon: ${markerLng.toFixed(6)}`);
+                const marker = L.circleMarker([markerLat, markerLng], { radius: 4, color: '#c0392b', fillColor: '#e74c3c', fillOpacity: 1 });
+                marker.bindPopup(`<b>SS407 - Km: ${km}</b><br>Lat: ${markerLat.toFixed(6)}<br>Lon: ${markerLng.toFixed(6)}`);
                 marker.addTo(layerGroup);
-                
                 lastMarkerDistance += 1000;
             }
             totalDistance += segmentDistance;
         }
     }
-    
-    // Oggetto per contenere i dati delle strade
-    // I tracciati sono stati pre-elaborati per te da OpenStreetMap
-    const roadsData = {
-        "SS99": {
-            "label": "SS99 - Matera-Confine Puglia",
-            "color": "#3498db",
-            "polyline": [[40.7433, 16.5681], [40.7397, 16.5686], [40.7381, 16.5709], [40.7369, 16.5753], [40.7366, 16.5824], [40.7346, 16.5912], [40.7324, 16.6006], [40.7317, 16.6027], [40.7299, 16.6062], [40.7275, 16.6092], [40.7203, 16.6139], [40.7188, 16.6143], [40.7161, 16.6148], [40.7091, 16.6152], [40.6972, 16.6141], [40.6823, 16.6094], [40.6723, 16.6063], [40.6681, 16.6053]]
-        },
-        "SS93": {
-            "label": "SS93",
-            "color": "#e67e22",
-            "polyline": [[40.7306, 15.8075], [40.7278, 15.8115], [40.7262, 15.8139], [40.7246, 15.8169], [40.7238, 15.8197], [40.723, 15.8239], [40.722, 15.8282], [40.7197, 15.833], [40.7183, 15.836], [40.7162, 15.8398], [40.7144, 15.8432], [40.712, 15.8482], [40.7099, 15.8523], [40.7068, 15.8573], [40.7042, 15.8617], [40.7022, 15.8654], [40.7, 15.8692], [40.6983, 15.8726], [40.6953, 15.8778], [40.6923, 15.8828], [40.6896, 15.887], [40.6865, 15.8916], [40.6827, 15.8966], [40.6796, 15.9008], [40.6756, 15.9056], [40.6721, 15.91], [40.669, 15.9138], [40.6659, 15.9175], [40.662, 15.9224], [40.6593, 15.9258], [40.6558, 15.9304]]
-        },
-        "SS401": {
-            "label": "SS401 - Ofantina",
-            "color": "#f1c40f",
-            "polyline": [[40.8866, 15.4679], [40.8856, 15.469], [40.884, 15.4715], [40.8824, 15.4741], [40.8805, 15.4772], [40.8787, 15.4803], [40.8757, 15.4849], [40.8726, 15.4897], [40.87, 15.4935], [40.8669, 15.4984], [40.8641, 15.5029], [40.8609, 15.508], [40.858, 15.5126], [40.8552, 15.5173], [40.8521, 15.5222], [40.8492, 15.5268], [40.8461, 15.5317], [40.843, 15.5367], [40.8402, 15.5412], [40.8373, 15.5458], [40.834, 15.5511], [40.8306, 15.5566], [40.8277, 15.5613], [40.8247, 15.566], [40.8214, 15.5709], [40.8183, 15.5756], [40.8152, 15.5801], [40.8123, 15.5844], [40.8093, 15.5886], [40.806, 15.5929], [40.8028, 15.5971], [40.8001, 15.6006], [40.7972, 15.6042], [40.7942, 15.6078], [40.791, 15.6115], [40.788, 15.615], [40.785, 15.6184], [40.7818, 15.6219], [40.7788, 15.6251]]
-        },
-        "SS7": {
-            "label": "SS7 - Appia (tratto)",
-            "color": "#9b59b6",
-            "polyline": [[40.8452, 15.3768], [40.8437, 15.3789], [40.8423, 15.381], [40.8407, 15.3833], [40.8389, 15.3857], [40.8368, 15.3884], [40.8346, 15.3913], [40.8322, 15.3944], [40.8296, 15.3976], [40.8272, 15.4005], [40.8247, 15.4035], [40.8221, 15.4067], [40.8193, 15.4101], [40.8164, 15.4137], [40.8136, 15.4171], [40.8107, 15.4206], [40.808, 15.4239], [40.805, 15.4275], [40.8018, 15.4312], [40.7989, 15.4347], [40.7959, 15.4382], [40.7928, 15.4418], [40.79, 15.445], [40.787, 15.4484], [40.784, 15.4518], [40.781, 15.4552], [40.7781, 15.4586], [40.7752, 15.4619], [40.7722, 15.4651], [40.7694, 15.4682]]
-        },
-        "SS598": {
-            "label": "SS598 - Fondo Valle d'Agri",
-            "color": "#1abc9c",
-            "polyline": [[40.4594, 15.5783], [40.4578, 15.5786], [40.4539, 15.5794], [40.4504, 15.5807], [40.4485, 15.5818], [40.4468, 15.5834], [40.4452, 15.5855], [40.4437, 15.588], [40.4419, 15.5912], [40.4401, 15.5948], [40.4383, 15.5986], [40.4367, 15.6022], [40.435, 15.606], [40.4334, 15.6097], [40.4317, 15.6136], [40.43, 15.6175], [40.4283, 15.6214], [40.4267, 15.6253], [40.425, 15.6293], [40.4233, 15.6333], [40.4217, 15.6373], [40.42, 15.6414], [40.4184, 15.6454], [40.4168, 15.6493], [40.4151, 15.6534], [40.4135, 15.6574], [40.4118, 15.6615], [40.4102, 15.6655], [40.4085, 15.6696], [40.4069, 15.6737], [40.4052, 15.6778], [40.4036, 15.6819], [40.402, 15.686], [40.4003, 15.6901], [40.3987, 15.6942]]
-        },
-         "SS19": {
-            "label": "SS19 - delle Calabrie",
-            "color": "#e74c3c",
-            "polyline": [[40.1786, 15.7128], [40.177, 15.7135], [40.1748, 15.7145], [40.1724, 15.7157], [40.1699, 15.7171], [40.1673, 15.7188], [40.1648, 15.7206], [40.162, 15.7227], [40.1592, 15.725], [40.1565, 15.7274], [40.1537, 15.7298], [40.1508, 15.7323], [40.1478, 15.735], [40.1448, 15.7377], [40.1419, 15.7403], [40.1388, 15.7431], [40.1356, 15.7459], [40.1325, 15.7487], [40.1292, 15.7516], [40.126, 15.7544], [40.1226, 15.7573], [40.1192, 15.7602], [40.1158, 15.7631], [40.1124, 15.766], [40.109, 15.7688], [40.1056, 15.7716], [40.1021, 15.7744]]
-        },
-        "SS18": {
-            "label": "SS18 - Tirrena Inferiore",
-            "color": "#2ecc71",
-            "polyline": [[40.0444, 15.6467], [40.0428, 15.6483], [40.0411, 15.6499], [40.0393, 15.6516], [40.0373, 15.6534], [40.0353, 15.6552], [40.0332, 15.6571], [40.0311, 15.659], [40.0289, 15.6609], [40.0267, 15.6628], [40.0245, 15.6647], [40.0223, 15.6666], [40.02, 15.6685], [40.0177, 15.6705], [40.0154, 15.6724], [40.013, 15.6744], [40.0107, 15.6763], [40.0083, 15.6782], [40.0059, 15.6802], [40.0035, 15.6821], [40.001, 15.684], [39.9986, 15.6859], [39.9961, 15.6878], [39.9936, 15.6897], [39.9911, 15.6916], [39.9886, 15.6934], [39.986, 15.6953]]
+
+    // 2. Funzione per recuperare e disegnare il tracciato
+    async function fetchAndDrawRoute(startCoords, endCoords, roadInfo) {
+        const loadingMessage = document.getElementById('loading');
+        loadingMessage.style.display = 'block';
+
+        // Costruisce l'URL per l'API di routing
+        const url = `https://router.project-osrm.org/route/v1/driving/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.code !== 'Ok') {
+                throw new Error('Impossibile trovare un percorso.');
+            }
+            
+            // Estrae la geometria del percorso (una lista di coordinate)
+            const routeCoordinates = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]); // Inverte [lon, lat] a [lat, lon]
+            
+            // Crea il tracciato e il gruppo di layer
+            const polyline = L.polyline(routeCoordinates, { color: roadInfo.color, weight: 6 });
+            const roadLayerGroup = L.layerGroup();
+            
+            polyline.addTo(roadLayerGroup);
+            generateKilometerMarkers(polyline, roadLayerGroup);
+            
+            // Aggiunge il layer alla mappa e al controllo
+            roadLayerGroup.addTo(map);
+            layerControl.addOverlay(roadLayerGroup, roadInfo.label);
+
+            // Centra la mappa sul tracciato
+            map.fitBounds(polyline.getBounds());
+
+        } catch (error) {
+            console.error('Errore nel caricamento del tracciato:', error);
+            alert(`Non è stato possibile caricare il tracciato per ${roadInfo.label}.`);
+        } finally {
+            loadingMessage.style.display = 'none';
         }
-    };
-    
-    // Oggetto per il controllo dei layer
+    }
+
+    // 3. Esecuzione
     const layerControl = L.control.layers(null, null, { collapsed: false }).addTo(map);
 
-    // Ciclo sui dati delle strade per creare i layer sulla mappa
-    for (const roadId in roadsData) {
-        const data = roadsData[roadId];
-        
-        // Crea il tracciato (polyline)
-        const polyline = L.polyline(data.polyline, { 
-            color: data.color,
-            weight: 5 
-        });
+    // Definiamo i punti di inizio e fine per la SS407 "Basentana"
+    const ss407_start = { lat: 40.638, lng: 15.755 }; // Potenza Est
+    const ss407_end = { lat: 40.380, lng: 16.822 };   // Metaponto
+    const ss407_info = { label: 'SS407 Basentana (Dettagliata)', color: '#e74c3c' };
 
-        // Crea un gruppo di layer per contenere la strada e i suoi marcatori
-        const roadLayerGroup = L.layerGroup();
-        polyline.addTo(roadLayerGroup);
-        
-        // Genera i marcatori chilometrici
-        generateKilometerMarkers(polyline, roadLayerGroup);
-        
-        // Aggiungi il gruppo al controllo layer
-        layerControl.addOverlay(roadLayerGroup, data.label);
-    }
-    
-    // Nota: Ho incluso le strade principali per le quali i dati erano chiaramente disponibili.
-    // L'elaborazione di tutte le SP richiede una ricerca più approfondita e manuale, 
-    // ma questa mappa fornisce una base di partenza solida e funzionale.
+    // Chiamiamo la funzione per disegnare la strada
+    fetchAndDrawRoute(ss407_start, ss407_end, ss407_info);
 
 </script>
 </body>
